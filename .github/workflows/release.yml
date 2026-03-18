@@ -1,0 +1,47 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Delete all existing releases and tags
+        run: |
+          gh release list --limit 500 --json tagName -q ".[].tagName" | while read -r tag; do
+            gh release delete "$tag" --yes --cleanup-tag || true
+          done
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and zip
+        run: npm run build:zip
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }}
+          files: build/skip-wait-${{ steps.version.outputs.version }}.zip
+          generate_release_notes: true

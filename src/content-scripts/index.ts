@@ -8,6 +8,7 @@ import { initSub2getRedirect } from './sub2get-redirect-content-script';
 import { initClipiRedirect } from './clipi-redirect-content-script';
 import { initOnlinetoolsDirectDownload } from './onlinetools-direct-download-content-script';
 import { initWpSafelinkRedirect } from './wp-safelink-redirect-content-script';
+import { initShrinkearnRedirect } from './shrinkearn-redirect-content-script';
 import { initAdlinkflyLinksGo } from './adlinkfly-links-go-content-script';
 import { initCookiesceoCopy } from './cookiesceo-copy-content-script';
 import { initOnhaxpkCopy } from './onhaxpk-copy-content-script';
@@ -23,6 +24,7 @@ const INITS = [
   initClipiRedirect,
   initOnlinetoolsDirectDownload,
   initWpSafelinkRedirect,
+  initShrinkearnRedirect,
   initAdlinkflyLinksGo,
   initCookiesceoCopy,
   initOnhaxpkCopy,
