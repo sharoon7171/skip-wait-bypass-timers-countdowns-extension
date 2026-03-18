@@ -26,10 +26,15 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Delete all existing releases and tags
+      - name: Delete all releases and all tags
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release list --limit 500 --json tagName -q ".[].tagName" | while read -r tag; do
             gh release delete "$tag" --yes --cleanup-tag || true
+          done
+          gh api repos/${{ github.repository }}/tags --paginate -q '.[].name' | while read -r tag; do
+            gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/$tag" || true
           done
 
       - name: Install dependencies
@@ -41,7 +46,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: ${{ steps.version.outputs.version }}
+          tag_name: latest
+          name: Latest ${{ steps.version.outputs.version }}
           files: build/skip-wait-${{ steps.version.outputs.version }}.zip
           generate_release_notes: true
