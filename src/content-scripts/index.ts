@@ -12,6 +12,7 @@ import { initShrinkearnRedirect } from './shrinkearn-redirect-content-script';
 import { initAdlinkflyLinksGo } from './adlinkfly-links-go-content-script';
 import { initCookiesceoCopy } from './cookiesceo-copy-content-script';
 import { initOnhaxpkCopy } from './onhaxpk-copy-content-script';
+import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogger-content-script';
 
 const INITS = [
   initMultiup,
@@ -28,6 +29,7 @@ const INITS = [
   initAdlinkflyLinksGo,
   initCookiesceoCopy,
   initOnhaxpkCopy,
+  initShrinkmeThemezonMrproblogger,
 ];
 
 for (const init of INITS) {
