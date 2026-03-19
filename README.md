@@ -31,4 +31,4 @@ Skip wait pages and countdown timers on link shorteners and file hosts. One-clic
 
 ## Request support for a site
 
-We add support for new sites over time. If you use a site with a countdown timer, waiting page, or link shortener you’d like to skip or automate, [open an issue](issues/new?template=request_support.yml) and we’ll add a bypass or automation where possible.
+We add support for new sites over time. If you use a site with a countdown timer, waiting page, or link shortener you’d like to skip or automate, [open an issue](https://github.com/sharoon7171/skip-wait-bypass-timers-countdowns/issues/new?template=request_support.yml) and we’ll add a bypass or automation where possible.
