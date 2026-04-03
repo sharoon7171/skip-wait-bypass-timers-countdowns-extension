@@ -14,6 +14,7 @@ import { initShrinkearnRedirect } from './shrinkearn-redirect-content-script';
 import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogger-content-script';
 import { initShrtflyRedirect } from './shrtfly-redirect-content-script';
 import { initSub2getRedirect } from './sub2get-redirect-content-script';
+import { initUsersdriveAutomation } from './usersdrive-countdown-bypass-content-script';
 import { initWpSafelinkRedirect } from './wp-safelink-redirect-content-script';
 
 const INITS = [
@@ -33,6 +34,7 @@ const INITS = [
   initShrinkmeThemezonMrproblogger,
   initShrtflyRedirect,
   initSub2getRedirect,
+  initUsersdriveAutomation,
   initWpSafelinkRedirect,
 ];
 

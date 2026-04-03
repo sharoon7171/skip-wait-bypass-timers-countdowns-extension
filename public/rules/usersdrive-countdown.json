@@ -1,0 +1,11 @@
+[
+  {
+    "id": 101,
+    "priority": 1,
+    "action": { "type": "block" },
+    "condition": {
+      "regexFilter": "^https://usersdrive\\.com/userdrive/assets/js/countdown\\.js(\\?.*)?$",
+      "resourceTypes": ["script"]
+    }
+  }
+]

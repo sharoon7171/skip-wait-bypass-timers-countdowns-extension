@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Skip Wait — Bypass Timers & Countdowns",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "Bypass countdown timers and skip waiting pages. Instant access on link shorteners and file hosts—no wait, one click.",
   "icons": {
     "16": "icon.png",
@@ -16,8 +16,17 @@
     },
     "default_popup": "popup.html"
   },
-  "permissions": ["scripting"],
+  "permissions": ["scripting", "declarativeNetRequest"],
   "host_permissions": ["<all_urls>"],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "usersdrive_countdown",
+        "enabled": true,
+        "path": "rules/usersdrive-countdown.json"
+      }
+    ]
+  },
   "background": {
     "service_worker": "background.js"
   },
