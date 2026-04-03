@@ -20,6 +20,6 @@
     "noUncheckedIndexedAccess": true,
     "baseUrl": "."
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "tokens/**/*", "tailwind.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -51,7 +51,7 @@ function toast(msg: string): void {
   const el = document.createElement('div');
   el.id = 'skipwait-onlinetools-toast';
   el.textContent = msg;
-  el.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;z-index:999999;box-shadow:0 4px 12px rgba(0,0,0,.3);animation:skipwait-fadein .2s ease;';
+  el.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 16px;border-radius:8px;font-family:Poppins;font-size:14px;z-index:999999;box-shadow:0 4px 12px rgba(0,0,0,.3);animation:skipwait-fadein .2s ease;';
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2200);
 }
