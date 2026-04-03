@@ -6,6 +6,7 @@ import { initFclcRedirect } from './fclc-redirect-content-script';
 import { initHdhub4uMainDomainRedirect } from './hdhub4u-main-domain-instant-redirect-content-script';
 import { initHdhub4uTimerBypass } from './hdhub4u-timer-bypass-content-script';
 import { initHubcdnRedirect } from './hubcdn-redirect-content-script';
+import { initLinkjustTimerChainBypass } from './linkjust-timer-chain-bypass-content-script';
 import { initMultiup } from './multiup-content-script';
 import { initOnhaxpkCopy } from './onhaxpk-copy-content-script';
 import { initOnlinetoolsDirectDownload } from './onlinetools-direct-download-content-script';
@@ -18,6 +19,7 @@ import { initUsersdriveAutomation } from './usersdrive-countdown-bypass-content-
 import { initWpSafelinkRedirect } from './wp-safelink-redirect-content-script';
 
 const INITS = [
+  initLinkjustTimerChainBypass,
   initAdlinkflyLinksGo,
   initBitcotasksReadArticle,
   initClipiRedirect,

@@ -1,7 +1,7 @@
-import { isAllowedHost } from '../utils/domain-check';
+import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
 import { hasCaptchaToken } from '../utils/captcha-verifier';
 
-const ALLOWED_HOSTS = ['adfly.site', 'demo-adlinkfly.themeson.com'];
+const ADLINKFLY_HOSTS = ['adfly.site', 'demo-adlinkfly.themeson.com', 'wu8.in'] as const;
 
 const RECAPTCHA_NAMES = ['g-recaptcha-response'];
 
@@ -50,34 +50,46 @@ function onTimerPage(posted: { done: boolean }): boolean {
   return false;
 }
 
-export function initAdlinkflyLinksGo(): void {
-  if (!isAllowedHost(ALLOWED_HOSTS)) return;
-  chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
+export function attachAdlinkflyLinksGo(): void {
+  whenDomParsed(() => {
+    const posted = { done: false };
+    const run = (): boolean => {
+      const linkView = document.getElementById('link-view') as HTMLFormElement | null;
+      if (linkView) {
+        onCaptchaPage(linkView);
+        return false;
+      }
+      return onTimerPage(posted);
+    };
 
-  const posted = { done: false };
-  const run = (): boolean => {
-    const linkView = document.getElementById('link-view') as HTMLFormElement | null;
-    if (linkView) {
-      onCaptchaPage(linkView);
-      return false;
-    }
-    return onTimerPage(posted);
-  };
+    const observer = new MutationObserver(() => {
+      if (run()) observer.disconnect();
+    });
 
-  const observer = new MutationObserver(() => {
-    if (run()) observer.disconnect();
-  });
-
-  const exec = (): void => {
+    chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
     if (run()) return;
     observer.observe(document.documentElement, {
+      attributeFilter: ['href'],
+      attributes: true,
       childList: true,
       subtree: true,
-      attributes: true,
-      attributeFilter: ['href'],
     });
-  };
+    let micro = 0;
+    const microBurst = (): void => {
+      if (run()) return void observer.disconnect();
+      if (++micro < 48) queueMicrotask(microBurst);
+    };
+    queueMicrotask(microBurst);
+    let frames = 0;
+    const raf = (): void => {
+      if (run()) return void observer.disconnect();
+      if (++frames < 960) requestAnimationFrame(raf);
+    };
+    requestAnimationFrame(raf);
+  });
+}
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', exec);
-  else exec();
+export function initAdlinkflyLinksGo(): void {
+  if (!isAllowedHost(ADLINKFLY_HOSTS)) return;
+  attachAdlinkflyLinksGo();
 }
