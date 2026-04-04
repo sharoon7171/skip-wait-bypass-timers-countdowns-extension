@@ -1,10 +1,11 @@
 import { isCloudflareHumanVerificationDone } from '../utils/cloudflare-verifier';
-import { isAllowedHost } from '../utils/domain-check';
+import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
 
 const HOSTS = ['usersdrive.com'];
 
 let firstPostCommitted = false;
 let secondClickCommitted = false;
+let overrideRaf = 0;
 
 function hasTurnstileWidget(): boolean {
   return document.querySelector('.cf-turnstile') !== null;
@@ -24,6 +25,21 @@ function unlockDownloadUi(): void {
   }
 }
 
+function forceCountdownZero(): void {
+  const sec = document.querySelector('#countdown .seconds');
+  if (sec) sec.textContent = '0';
+}
+
+function startCountdownOverride(): void {
+  const step = (): void => {
+    if (firstPostCommitted) return;
+    forceCountdownZero();
+    unlockDownloadUi();
+    overrideRaf = requestAnimationFrame(step);
+  };
+  overrideRaf = requestAnimationFrame(step);
+}
+
 function getDownloadForm(): HTMLFormElement | null {
   const btn = document.getElementById('downloadbtn');
   return btn instanceof HTMLButtonElement ? (btn.form ?? null) : null;
@@ -41,10 +57,10 @@ function runWhenCloudflareAllowsFirstPost(onReady: () => void): void {
     if (maybeRun()) mo.disconnect();
   });
   mo.observe(document.documentElement, {
+    attributeFilter: ['value', 'class'],
+    attributes: true,
     childList: true,
     subtree: true,
-    attributes: true,
-    attributeFilter: ['value', 'class'],
   });
 }
 
@@ -77,21 +93,22 @@ function runSecondStepClick(): void {
 
 export function initUsersdriveAutomation(): void {
   if (!isAllowedHost(HOSTS)) return;
-  const start = (): void => {
-    if (document.getElementById('downloadbtn')) {
-      runWhenCloudflareAllowsFirstPost(() => {
-        if (firstPostCommitted) return;
-        firstPostCommitted = true;
-        unlockDownloadUi();
-        getDownloadForm()?.submit();
-      });
-      return;
-    }
-    runSecondStepClick();
-  };
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start, { once: true });
-  } else {
+  whenDomParsed(() => {
+    const start = (): void => {
+      if (document.getElementById('downloadbtn')) {
+        startCountdownOverride();
+        runWhenCloudflareAllowsFirstPost(() => {
+          if (firstPostCommitted) return;
+          firstPostCommitted = true;
+          cancelAnimationFrame(overrideRaf);
+          forceCountdownZero();
+          unlockDownloadUi();
+          getDownloadForm()?.submit();
+        });
+        return;
+      }
+      runSecondStepClick();
+    };
     start();
-  }
+  });
 }

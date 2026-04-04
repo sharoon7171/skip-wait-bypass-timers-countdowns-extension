@@ -56,13 +56,6 @@ Skip Wait requests the "scripting" permission to run code on wait pages and shor
 
 
 --------------------------------------------------------------------------------
-DECLARATIVE NET REQUEST PERMISSION
---------------------------------------------------------------------------------
-
-Skip Wait requests the "declarativeNetRequest" permission so it can ship a small, fixed ruleset bundled with the extension (no remote rule updates). The rules block loading of a single countdown script on usersdrive.com that enforces a mandatory wait before download. Blocking that script is required for the bypass to work on that host; it is not used to intercept general traffic, modify unrelated requests, or collect data. The rule list is minimal and limited to timer bypass on supported file-host pages.
-
-
---------------------------------------------------------------------------------
 HOST PERMISSION
 --------------------------------------------------------------------------------
 
