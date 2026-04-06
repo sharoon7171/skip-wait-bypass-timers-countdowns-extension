@@ -1,4 +1,4 @@
-import { hostnameMatches, isAllowedHost, whenDomParsed } from '../utils/domain-check';
+import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
 import { attachAdlinkflyLinksGo } from './adlinkfly-links-go-content-script';
 
 const AD_SHELL_SEL = '#link-view,#go-link,form[action*="/links/go"],a.get-link';
@@ -9,19 +9,14 @@ const OBS_HOP: MutationObserverInit = {
   childList: true,
   subtree: true,
 };
-const TIMER_HOSTS = [
-  'linkjust.com',
-  'go4news.online',
-  'bein4kora.online',
-  'trips.newsvix.online',
-  'newsvix.online',
-] as const;
-const WP_HTML_HINTS = [
+const CHAIN_HTML_MARKERS = [
   'Loading Link',
   'linkjust-timer',
   'linkjustInit',
   'next-timer-btn',
   'timer_seconds',
+  'final-link-wrapper',
+  'linkjust-progress-marker',
 ] as const;
 const WP_TIMER_SEL =
   '#next-timer-btn,#linkjust-timer,#timer_seconds,#mdtimer,#linkjust-progress-marker';
@@ -31,19 +26,14 @@ function isLinkjustHost(hostname: string): boolean {
   return h === 'linkjust.com' || h.endsWith('.linkjust.com');
 }
 
-function chainReferrerOk(): boolean {
-  try {
-    const r = document.referrer;
-    return Boolean(r && hostnameMatches(new URL(r).hostname, TIMER_HOSTS));
-  } catch {
-    return false;
-  }
-}
-
-function isWpTimer(doc: Document): boolean {
+function isTimerChainTemplate(doc: Document): boolean {
   if (doc.querySelector(WP_TIMER_SEL)) return true;
+  if (doc.querySelector('#final-link-wrapper')) return true;
+  if (doc.querySelector('a#next-timer-btn')) return true;
+  if (doc.querySelector('a[href*="ViewArticle="],a[href*="viewarticle="]')) return true;
   const html = doc.documentElement.innerHTML;
-  return WP_HTML_HINTS.some((s) => html.includes(s));
+  if (CHAIN_HTML_MARKERS.some((s) => html.includes(s))) return true;
+  return /ViewArticle=|viewarticle=/i.test(html);
 }
 
 function isAdShell(doc: Document): boolean {
@@ -190,21 +180,16 @@ function extractNextHop(): string | null {
 }
 
 function runHopBypass(): void {
-  if (!isAllowedHost(TIMER_HOSTS)) return;
   const onLj = isAllowedHost(LINKJUST);
-  const wp = isWpTimer(document);
-  const refOk = !onLj && chainReferrerOk();
+  const tpl = isTimerChainTemplate(document);
   const short = onLj && isShortSlugPath();
-  if (!wp && !refOk && !short) {
-    const n = extractNextHop();
-    if (!n || (onLj && isLinkjustUrl(n))) return;
-  }
+  if (!tpl && !short) return;
   let done = false;
   const tryGo = (): boolean => {
     if (done) return true;
     const next = extractNextHop();
     if (!next) return false;
-    if (onLj && !isWpTimer(document) && isLinkjustUrl(next)) return false;
+    if (onLj && !isTimerChainTemplate(document) && isLinkjustUrl(next)) return false;
     done = true;
     window.location.replace(next);
     return true;
@@ -232,17 +217,15 @@ function runHopBypass(): void {
 }
 
 export function initLinkjustTimerChainBypass(): void {
-  if (!isAllowedHost(TIMER_HOSTS)) return;
   whenDomParsed(() => {
-    if (!isAllowedHost(TIMER_HOSTS)) return;
     const onLj = isAllowedHost(LINKJUST);
     if (onLj) {
-      if (!isShortSlugPath() && !isWpTimer(document) && !isAdShell(document)) return;
+      if (!isShortSlugPath() && !isTimerChainTemplate(document) && !isAdShell(document)) return;
       if (isAdShell(document)) attachAdlinkflyLinksGo();
       else runHopBypass();
       return;
     }
-    if (!isWpTimer(document) && !chainReferrerOk()) return;
+    if (!isTimerChainTemplate(document)) return;
     runHopBypass();
   });
 }
