@@ -1,6 +1,13 @@
 import { isAllowedHost } from '../utils/domain-check';
 
-const ALLOWED_HOSTS = ['cryptoinsights.site', 'cryptonewz.one', 'gadgetsweb.xyz', 'inventoryidea.com', 'taazabull24.com'];
+const ALLOWED_HOSTS = [
+  'cryptoinsights.site',
+  'cryptonewz.one',
+  'gadgetsweb.xyz',
+  'greenmountmotors.com',
+  'inventoryidea.com',
+  'taazabull24.com',
+];
 
 type StrProto = string & { ca(): string; de(): string; en(): string };
 
