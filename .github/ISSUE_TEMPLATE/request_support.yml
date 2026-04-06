@@ -1,28 +1,29 @@
 name: Request a website
 description: Ask to add support for a website that shows a countdown or wait page
-title: "Add support: "
 labels: ["request-support"]
+assignees:
+  - sharoon7171
 body:
   - type: markdown
     attributes:
       value: |
-        Use the **hostname** from the address bar on the page where the timer shows. Describe **numbered steps** from a new tab until the timer is visible (clicks, which page loads next).
+        GitHub still needs an **issue title** above. Use the **hostname only** (same as **Main page** below), e.g. `example.com`.
   - type: input
     id: domain
     attributes:
-      label: Main domain
-      description: Hostname when the timer or wait screen is visible (e.g. example.com or sub.example.com).
+      label: Main page — hostname
+      description: Host from the address bar on the first page where the timer or wait screen is (or where you land right before it), e.g. example.com or sub.example.com.
       placeholder: e.g. example.com
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: Steps until you see the timer
-      description: Start from opening the link or page. Include each click or navigation so someone else reaches the same timer.
+      label: Steps — how we can see the timer
+      description: From a new tab, list the full path until the countdown or wait screen is visible—each click, paste, or navigation and what loads next.
       placeholder: |
         1. Open …
         2. Click …
-        3. Timer appears …
+        3. Timer appears on …
     validations:
       required: true
