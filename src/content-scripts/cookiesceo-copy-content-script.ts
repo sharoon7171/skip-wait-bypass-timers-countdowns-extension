@@ -38,7 +38,7 @@ async function run(): Promise<void> {
   card.innerHTML = [
     `<div style="${s.badge}">Skip Wait</div>`,
     `<h3 style="${s.title}">Cookies ready</h3>`,
-    `<p style="${s.description}">Timer skipped. Cookie loaded by the extension — copy below, no redirect.</p>`,
+    `<p style="${s.description}">Timer skipped. Cookie loaded by the extension - copy below, no redirect.</p>`,
     `<p style="${s.status}" id="skipwait-status">Fetching…</p>`,
     `<button type="button" style="${s.btn};display:none" id="skipwait-copy">Copy cookie</button>`,
   ].join('');

@@ -1,6 +1,6 @@
-# Skip Wait — Bypass Timers & Countdowns
+# Skip Wait - Bypass Timers & Countdowns
 
-Skip wait pages and countdown timers on link shorteners and file hosts. One-click bypass—no more 5–30 second delays. Get to your link faster.
+Skip wait pages and countdown timers on link shorteners and file hosts. One-click bypass - no more 5-30 second delays. Get to your link faster.
 
 ![Skip Wait icon](public/icon.png)
 
@@ -10,11 +10,11 @@ Skip wait pages and countdown timers on link shorteners and file hosts. One-clic
 
 ## What it does
 
-- **Skip countdown timers** — Bypass countdown and delay timers on download and link pages.
-- **Bypass link shorteners** — Get past short-link and redirect pages to the final URL.
-- **Skip waiting pages** — Avoid “please wait” and “click to continue” screens.
-- **Instant redirect** — When possible, you’re sent straight to the target URL.
-- **Automation when needed** — On sites where full bypass isn’t possible, Skip Wait can automate waiting and clicking so you still save time.
+- **Skip countdown timers** - Bypass countdown and delay timers on download and link pages.
+- **Bypass link shorteners** - Get past short-link and redirect pages to the final URL.
+- **Skip waiting pages** - Avoid “please wait” and “click to continue” screens.
+- **Instant redirect** - When possible, you’re sent straight to the target URL.
+- **Automation when needed** - On sites where full bypass isn’t possible, Skip Wait can automate waiting and clicking so you still save time.
 
 ## Who it’s for
 

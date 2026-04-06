@@ -41,8 +41,8 @@ function run(): void {
   card.setAttribute('style', s.card);
   card.innerHTML = [
     `<div style="${s.badge}">Skip Wait extension</div>`,
-    `<h3 style="${s.title}">Countdown bypassed — cookie ready</h3>`,
-    `<p style="${s.description}">This box was added by the <strong>Skip Wait</strong> extension. We skipped the countdown and loaded the cookie for you. Pick a format below and copy — no ads, no wait.</p>`,
+    `<h3 style="${s.title}">Countdown bypassed - cookie ready</h3>`,
+    `<p style="${s.description}">This box was added by the <strong>Skip Wait</strong> extension. We skipped the countdown and loaded the cookie for you. Pick a format below and copy - no ads, no wait.</p>`,
     `<p style="${s.status}" id="skipwait-onhax-status">Loading…</p>`,
     `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">`,
     `<button type="button" style="${s.btn}" id="skipwait-onhax-session" disabled>📋 Session share</button>`,

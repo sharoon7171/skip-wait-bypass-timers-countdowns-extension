@@ -1,7 +1,7 @@
 {
   "name": "skip-wait",
   "version": "1.4.11",
-  "description": "Bypass countdown timers and skip waiting pages. Instant access on link shorteners and file hosts—no wait, one click. Works on any site with wait timers.",
+  "description": "Bypass countdown timers and skip waiting pages. Instant access on link shorteners and file hosts - no wait, one click. Works on any site with wait timers.",
   "type": "module",
   "scripts": {
     "dev": "VITE_DEV_WATCH=1 vite build --watch & sleep 2 && vite build --config vite.content.config.ts --watch",

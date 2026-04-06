@@ -125,7 +125,7 @@ function run(): void {
     const card = document.createElement('div');
     card.id = CARD_ID;
     card.setAttribute('style', s.card);
-    card.innerHTML = `<div style="${s.badge}">Skip Wait extension</div><p style="${s.description}">We made the <strong>Copy</strong> and <strong>Download</strong> buttons work in one click — no pop-ups, no waiting. Just use the buttons below.</p>`;
+    card.innerHTML = `<div style="${s.badge}">Skip Wait extension</div><p style="${s.description}">We made the <strong>Copy</strong> and <strong>Download</strong> buttons work in one click - no pop-ups, no waiting. Just use the buttons below.</p>`;
     twoColRow.insertBefore(card, twoColRow.firstChild);
   }
 

@@ -17,9 +17,9 @@ Skip Wait removes mandatory wait times on supported sites. You either get an ins
 SUPPORTED SITES & BEHAVIOR
 --------------------------------------------------------------------------------
 
-• Link shorteners and safelinks — direct redirect to the final URL when possible
-• File hosts and download pages — one-click skip so you can start the download
-• Streaming and unlock pages — bypass countdown or cookie/session delay
+• Link shorteners and safelinks - direct redirect to the final URL when possible
+• File hosts and download pages - one-click skip so you can start the download
+• Streaming and unlock pages - bypass countdown or cookie/session delay
 • New sites are added with updates; use the popup to request support for more
 
 
@@ -27,10 +27,10 @@ SUPPORTED SITES & BEHAVIOR
 FEATURES
 --------------------------------------------------------------------------------
 
-• Runs automatically on supported pages only — no toggles or settings to configure
-• Zero config — open the link as usual; the extension handles the rest
-• Free — no subscription, sign-up, or paywall
-• Lightweight — no impact on sites that are not supported wait or short-link pages
+• Runs automatically on supported pages only - no toggles or settings to configure
+• Zero config - open the link as usual; the extension handles the rest
+• Free - no subscription, sign-up, or paywall
+• Lightweight - no impact on sites that are not supported wait or short-link pages
 • Request new sites via the popup for future releases
 
 
@@ -52,11 +52,11 @@ Skip Wait has one purpose: to bypass countdown timers and waiting pages on link 
 SCRIPTING PERMISSION
 --------------------------------------------------------------------------------
 
-Skip Wait requests the "scripting" permission to run code on wait pages and short-link pages. It needs to run in the page context to detect countdown timers, resolve redirect chains, find or click skip/unlock controls, and inject controls when the host page does not provide them. Content scripts alone cannot reliably bypass many wait-page implementations. Scripting is used only on supported wait and short-link pages, and only for bypassing countdowns and waiting pages — not for analytics, ads, or any other purpose.
+Skip Wait requests the "scripting" permission to run code on wait pages and short-link pages. It needs to run in the page context to detect countdown timers, resolve redirect chains, find or click skip/unlock controls, and inject controls when the host page does not provide them. Content scripts alone cannot reliably bypass many wait-page implementations. Scripting is used only on supported wait and short-link pages, and only for bypassing countdowns and waiting pages - not for analytics, ads, or any other purpose.
 
 
 --------------------------------------------------------------------------------
 HOST PERMISSION
 --------------------------------------------------------------------------------
 
-Skip Wait requests host permission to run on the same origins as the wait pages and link shorteners it supports. Bypassing a countdown or short link requires running code on that page; without host access it cannot read the page, resolve redirects, or perform the required actions. Supported sites include many link shorteners, file hosts, and safelink domains; the set grows with updates. Host permission is limited to what is needed to operate on those pages. It is not used to collect data or alter unrelated sites — only to skip wait timers and countdowns on supported pages.
+Skip Wait requests host permission to run on the same origins as the wait pages and link shorteners it supports. Bypassing a countdown or short link requires running code on that page; without host access it cannot read the page, resolve redirects, or perform the required actions. Supported sites include many link shorteners, file hosts, and safelink domains; the set grows with updates. Host permission is limited to what is needed to operate on those pages. It is not used to collect data or alter unrelated sites - only to skip wait timers and countdowns on supported pages.
