@@ -1,5 +1,6 @@
 import { initAdlinkflyLinksGo } from './adlinkfly-links-go-content-script';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article-content-script';
+import { initUhdmoviesCloudContentScript } from './uhdmovies-cloud-content-script';
 import { initClipiRedirect } from './clipi-redirect-content-script';
 import { initCookiesceoCopy } from './cookiesceo-copy-content-script';
 import { initFclcRedirect } from './fclc-redirect-content-script';
@@ -20,6 +21,7 @@ import { initWpSafelinkRedirect } from './wp-safelink-redirect-content-script';
 
 const INITS = [
   initLinkjustTimerChainBypass,
+  initUhdmoviesCloudContentScript,
   initAdlinkflyLinksGo,
   initBitcotasksReadArticle,
   initClipiRedirect,
