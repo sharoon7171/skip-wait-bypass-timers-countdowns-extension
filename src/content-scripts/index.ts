@@ -8,6 +8,7 @@ import { initHdhub4uMainDomainRedirect } from './hdhub4u-main-domain-instant-red
 import { initHdhub4uTimerBypass } from './hdhub4u-timer-bypass-content-script';
 import { initHubcdnRedirect } from './hubcdn-redirect-content-script';
 import { initLinkjustTimerChainBypass } from './linkjust-timer-chain-bypass-content-script';
+import { initShikshakdaakHubcloudDrive } from './shikshakdaak-hubcloud-drive-content-script';
 import { initMultiup } from './multiup-content-script';
 import { initOnhaxpkCopy } from './onhaxpk-copy-content-script';
 import { initOnlinetoolsDirectDownload } from './onlinetools-direct-download-content-script';
@@ -30,6 +31,7 @@ const INITS = [
   initHdhub4uMainDomainRedirect,
   initHdhub4uTimerBypass,
   initHubcdnRedirect,
+  initShikshakdaakHubcloudDrive,
   initMultiup,
   initOnhaxpkCopy,
   initOnlinetoolsDirectDownload,
