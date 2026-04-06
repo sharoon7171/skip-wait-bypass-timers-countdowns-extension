@@ -7,15 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        GitHub still needs an **issue title** above. Use the **hostname only** (same as **Main page** below), e.g. `example.com`.
-  - type: input
-    id: domain
-    attributes:
-      label: Main page — hostname
-      description: Host from the address bar on the first page where the timer or wait screen is (or where you land right before it), e.g. example.com or sub.example.com.
-      placeholder: e.g. example.com
-    validations:
-      required: true
+        In **Title** above, enter the **main domain only** (hostname from the address bar where the timer shows), e.g. `example.com` or `sub.example.com`.
   - type: textarea
     id: steps
     attributes:
