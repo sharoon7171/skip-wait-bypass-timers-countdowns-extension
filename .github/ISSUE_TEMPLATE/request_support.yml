@@ -3,18 +3,26 @@ description: Ask to add support for a website that shows a countdown or wait pag
 title: "Add support: "
 labels: ["request-support"]
 body:
-  - type: input
-    id: website
+  - type: markdown
     attributes:
-      label: Website or link
-      placeholder: https://example.com or example.com
+      value: |
+        Use the **hostname** from the address bar on the page where the timer shows. Describe **numbered steps** from a new tab until the timer is visible (clicks, which page loads next).
+  - type: input
+    id: domain
+    attributes:
+      label: Main domain
+      description: Hostname when the timer or wait screen is visible (e.g. example.com or sub.example.com).
+      placeholder: e.g. example.com
     validations:
       required: true
   - type: textarea
-    id: where_timer
+    id: steps
     attributes:
-      label: Where does the website show the timer?
-      description: How can you see the timer? (e.g. after opening the link, after clicking a button)
-      placeholder: e.g. I open the link, then a countdown appears before the real page.
+      label: Steps until you see the timer
+      description: Start from opening the link or page. Include each click or navigation so someone else reaches the same timer.
+      placeholder: |
+        1. Open …
+        2. Click …
+        3. Timer appears …
     validations:
       required: true
