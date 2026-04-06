@@ -3,12 +3,13 @@ import { initBitcotasksReadArticle } from './bitcotasks-read-article-content-scr
 import { initUhdmoviesCloudContentScript } from './uhdmovies-cloud-content-script';
 import { initClipiRedirect } from './clipi-redirect-content-script';
 import { initCookiesceoCopy } from './cookiesceo-copy-content-script';
+import { initFastdlZipRedirect } from './fastdl-zip-redirect-content-script';
 import { initFclcRedirect } from './fclc-redirect-content-script';
 import { initHdhub4uMainDomainRedirect } from './hdhub4u-main-domain-instant-redirect-content-script';
 import { initHdhub4uTimerBypass } from './hdhub4u-timer-bypass-content-script';
 import { initHubcdnRedirect } from './hubcdn-redirect-content-script';
 import { initLinkjustTimerChainBypass } from './linkjust-timer-chain-bypass-content-script';
-import { initShikshakdaakHubcloudDrive } from './shikshakdaak-hubcloud-drive-content-script';
+import { initHubcloudDrive } from './hubcloud-drive-content-script';
 import { initMultiup } from './multiup-content-script';
 import { initOnhaxpkCopy } from './onhaxpk-copy-content-script';
 import { initOnlinetoolsDirectDownload } from './onlinetools-direct-download-content-script';
@@ -27,11 +28,12 @@ const INITS = [
   initBitcotasksReadArticle,
   initClipiRedirect,
   initCookiesceoCopy,
+  initFastdlZipRedirect,
   initFclcRedirect,
   initHdhub4uMainDomainRedirect,
   initHdhub4uTimerBypass,
   initHubcdnRedirect,
-  initShikshakdaakHubcloudDrive,
+  initHubcloudDrive,
   initMultiup,
   initOnhaxpkCopy,
   initOnlinetoolsDirectDownload,
