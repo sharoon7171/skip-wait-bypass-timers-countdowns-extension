@@ -1,4 +1,5 @@
 import { initAdlinkflyLinksGo } from './adlinkfly-links-go-content-script';
+import { initAdlinkflyTokenPayloadRedirect } from './adlinkfly-token-payload-redirect-content-script';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article-content-script';
 import { initUhdmoviesCloudContentScript } from './uhdmovies-cloud-content-script';
 import { initClipiRedirect } from './clipi-redirect-content-script';
@@ -28,6 +29,7 @@ const INITS = [
   initMoviesModContentScript,
   initUhdmoviesCloudContentScript,
   initAdlinkflyLinksGo,
+  initAdlinkflyTokenPayloadRedirect,
   initBitcotasksReadArticle,
   initClipiRedirect,
   initCookiesceoCopy,
