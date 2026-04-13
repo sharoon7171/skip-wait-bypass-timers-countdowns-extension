@@ -1,4 +1,4 @@
-const ALLOWED_HOSTNAMES: readonly string[] = ['episodes.modpro.blog'];
+const ALLOWED_HOSTNAMES: readonly string[] = ['episodes.modpro.blog', 'links.modpro.blog'];
 
 const STYLE_ID = 'skipwait-movies-mod-timed-content';
 

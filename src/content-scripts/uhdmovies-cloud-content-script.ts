@@ -1,6 +1,6 @@
 import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
 
-const HOSTS = ['cloud.unblockedgames.world'] as const;
+const HOSTS = ['cloud.unblockedgames.world', 'tech.pubgmobileapk.co'] as const;
 const GO_PEPE = /\?go=(pepe-[a-f0-9]+)/;
 const SID_KEY = 'skipwait_cug_sid';
 
