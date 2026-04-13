@@ -18,6 +18,7 @@ import { initPrmoviesRedirect } from './prmovies-redirect-content-script';
 import { initShrinkearnRedirect } from './shrinkearn-redirect-content-script';
 import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogger-content-script';
 import { initShrtflyRedirect } from './shrtfly-redirect-content-script';
+import { initStbemuiptvcodesWpsafelink } from './stbemuiptvcodes-wpsafelink-content-script';
 import { initSub2getRedirect } from './sub2get-redirect-content-script';
 import { initUsersdriveAutomation } from './usersdrive-countdown-bypass-content-script';
 import { initWpSafelinkRedirect } from './wp-safelink-redirect-content-script';
@@ -43,6 +44,7 @@ const INITS = [
   initShrinkearnRedirect,
   initShrinkmeThemezonMrproblogger,
   initShrtflyRedirect,
+  initStbemuiptvcodesWpsafelink,
   initSub2getRedirect,
   initUsersdriveAutomation,
   initWpSafelinkRedirect,
