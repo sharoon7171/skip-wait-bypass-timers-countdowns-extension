@@ -9,6 +9,7 @@ import { initHdhub4uMainDomainRedirect } from './hdhub4u-main-domain-instant-red
 import { initHdhub4uTimerBypass } from './hdhub4u-timer-bypass-content-script';
 import { initHubcdnRedirect } from './hubcdn-redirect-content-script';
 import { initLinkjustTimerChainBypass } from './linkjust-timer-chain-bypass-content-script';
+import { initMoviesModContentScript } from './movies-mod-content-script';
 import { initHubcloudDrive } from './hubcloud-drive-content-script';
 import { initMultiup } from './multiup-content-script';
 import { initOnhaxpkCopy } from './onhaxpk-copy-content-script';
@@ -23,6 +24,7 @@ import { initWpSafelinkRedirect } from './wp-safelink-redirect-content-script';
 
 const INITS = [
   initLinkjustTimerChainBypass,
+  initMoviesModContentScript,
   initUhdmoviesCloudContentScript,
   initAdlinkflyLinksGo,
   initBitcotasksReadArticle,
