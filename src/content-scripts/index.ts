@@ -1,3 +1,4 @@
+import { initCoomeetIframeBootstrap } from './coomeet-iframe';
 import { initAdlinkflyLinksGo } from './adlinkfly-links-go-content-script';
 import { initAdlinkflyTokenPayloadRedirect } from './adlinkfly-token-payload-redirect-content-script';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article-content-script';
@@ -16,6 +17,7 @@ import { initMultiup } from './multiup-content-script';
 import { initOnhaxpkCopy } from './onhaxpk-copy-content-script';
 import { initOnlinetoolsDirectDownload } from './onlinetools-direct-download-content-script';
 import { initPrmoviesRedirect } from './prmovies-redirect-content-script';
+import { initRomsfunDownloadInstant } from './romsfun-download-instant-content-script';
 import { initShrinkearnRedirect } from './shrinkearn-redirect-content-script';
 import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogger-content-script';
 import { initShrtflyRedirect } from './shrtfly-redirect-content-script';
@@ -43,6 +45,7 @@ const INITS = [
   initOnhaxpkCopy,
   initOnlinetoolsDirectDownload,
   initPrmoviesRedirect,
+  initRomsfunDownloadInstant,
   initShrinkearnRedirect,
   initShrinkmeThemezonMrproblogger,
   initShrtflyRedirect,
@@ -52,8 +55,20 @@ const INITS = [
   initWpSafelinkRedirect,
 ];
 
-for (const init of INITS) {
+function currentHostname(): string {
   try {
-    init();
-  } catch {}
+    return new URL(window.location.href).hostname;
+  } catch {
+    return '';
+  }
+}
+
+if (currentHostname() === 'iframe.coomeet.com') {
+  initCoomeetIframeBootstrap();
+} else if (window === window.top) {
+  for (const init of INITS) {
+    try {
+      init();
+    } catch {}
+  }
 }
