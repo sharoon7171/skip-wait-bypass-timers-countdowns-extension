@@ -23,6 +23,7 @@ import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogg
 import { initShrtflyRedirect } from './shrtfly-redirect-content-script';
 import { initStbemuiptvcodesWpsafelink } from './stbemuiptvcodes-wpsafelink-content-script';
 import { initSub2getRedirect } from './sub2get-redirect-content-script';
+import { initTeknoasianHqChain } from './teknoasian-hq-chain-content-script';
 import { initUsersdriveAutomation } from './usersdrive-countdown-bypass-content-script';
 import { initWpSafelinkRedirect } from './wp-safelink-redirect-content-script';
 
@@ -51,6 +52,7 @@ const INITS = [
   initShrtflyRedirect,
   initStbemuiptvcodesWpsafelink,
   initSub2getRedirect,
+  initTeknoasianHqChain,
   initUsersdriveAutomation,
   initWpSafelinkRedirect,
 ];

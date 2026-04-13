@@ -1,7 +1,7 @@
 import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
 import { hasCaptchaToken } from '../utils/captcha-verifier';
 
-const ADLINKFLY_HOSTS = ['adfly.site', 'demo-adlinkfly.themeson.com', 'wu8.in'] as const;
+const ADLINKFLY_HOSTS = ['adfly.site', 'demo-adlinkfly.themeson.com', 'pahe.plus', 'wu8.in'] as const;
 
 const RECAPTCHA_NAMES = ['g-recaptcha-response'];
 
