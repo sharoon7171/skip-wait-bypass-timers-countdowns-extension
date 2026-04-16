@@ -1,68 +1,39 @@
-import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
-
-const HOSTS = ['cloud.unblockedgames.world', 'tech.pubgmobileapk.co'] as const;
-const GO_PEPE = /\?go=(pepe-[a-f0-9]+)/;
-const SID_KEY = 'skipwait_cug_sid';
-
-function armSidFromQuery(): void {
-  try {
-    if (new URLSearchParams(window.location.search).has('sid')) {
-      sessionStorage.setItem(SID_KEY, '1');
-    }
-  } catch {}
+function bytesToBase64(bytes: Uint8Array): string {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + 0x8000)));
+  }
+  return btoa(bin);
 }
 
-function sidSessionValid(): boolean {
+function randomSlug(): string {
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  return `pepe-${Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')}`;
+}
+
+function isDoubleBase64(s: string): boolean {
   try {
-    return Boolean(sessionStorage.getItem(SID_KEY));
+    return atob(atob(s)).length > 0;
   } catch {
     return false;
   }
 }
 
-function trySubmitLanding(): boolean {
-  const el = document.getElementById('landing');
-  if (!(el instanceof HTMLFormElement) || el.method.toLowerCase() !== 'post') return false;
-  if (!el.querySelector('input[name="_wp_http2"]') || !el.querySelector('input[name="token"]')) return false;
-  const action = el.action;
-  if (!action || !/^https?:\/\//i.test(action)) return false;
-  el.submit();
-  return true;
+async function zlibDeflateBase64(input: string): Promise<string> {
+  const stream = new Blob([input]).stream().pipeThrough(new CompressionStream('deflate'));
+  return bytesToBase64(new Uint8Array(await new Response(stream).arrayBuffer()));
 }
 
-function tryAssignGoPepe(): boolean {
-  if (!document.getElementById('verify_button2')) return false;
-  const id = (document.documentElement?.innerHTML ?? '').match(GO_PEPE)?.[1];
-  if (!id) return false;
-  const next = `${window.location.origin}/?go=${id}`;
-  if (window.location.href.split('#')[0] === next) return false;
-  window.location.assign(next);
-  return true;
-}
-
-function tryAutomate(): boolean {
-  return trySubmitLanding() || tryAssignGoPepe();
+async function shortcut(sid: string): Promise<void> {
+  const slug = randomSlug();
+  document.cookie = `${slug}=${await zlibDeflateBase64(sid)};path=/;max-age=3600;samesite=lax`;
+  window.location.replace(`${window.location.origin}/?go=${slug}`);
 }
 
 export function initUhdmoviesCloudContentScript(): void {
-  if (!isAllowedHost(HOSTS)) return;
-  armSidFromQuery();
-  if (!sidSessionValid()) return;
-  let done = false;
-  const run = (): void => {
-    if (done) return;
-    if (tryAutomate()) {
-      done = true;
-      return;
-    }
-    const mo = new MutationObserver(() => {
-      if (done) return;
-      if (tryAutomate()) {
-        done = true;
-        mo.disconnect();
-      }
-    });
-    mo.observe(document.documentElement, { childList: true, subtree: true });
-  };
-  whenDomParsed(run);
+  if (!window.location.search.startsWith('?sid=')) return;
+  const sid = new URLSearchParams(window.location.search).get('sid');
+  if (!sid || sid.length < 100 || !isDoubleBase64(sid)) return;
+  void shortcut(sid);
 }
