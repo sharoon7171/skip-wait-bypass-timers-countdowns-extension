@@ -1,8 +1,64 @@
-const TS = '[name="cf-turnstile-response"]';
+import { isCloudflareHumanVerificationDone } from '../utils/cloudflare-verifier';
+
 const PATH = /^\/(?:r|download)\/[^/]+/;
+const MSG_VISIBILITY = 'INJECT_VISIBILITY_SPOOF';
 
 function isInterstitialPath(): boolean {
   return PATH.test(location.pathname);
+}
+
+function headingEl(): HTMLElement | null {
+  return document.getElementById('title') ?? document.querySelector('main h1');
+}
+
+function headingIncludes(sub: string): boolean {
+  const t = headingEl()?.textContent ?? '';
+  return t.includes(sub);
+}
+
+function settle(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function untilStable(ready: () => boolean, stableMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    let okSince: number | null = null;
+    let raf = 0;
+    let mo: MutationObserver | undefined;
+    const stop = () => {
+      cancelAnimationFrame(raf);
+      mo?.disconnect();
+      document.removeEventListener('input', tick, true);
+      document.removeEventListener('change', tick, true);
+    };
+    const tick = (): void => {
+      const now = performance.now();
+      if (!ready()) {
+        okSince = null;
+        return;
+      }
+      if (okSince === null) okSince = now;
+      if (now - okSince >= stableMs) {
+        stop();
+        resolve();
+      }
+    };
+    const loop = (): void => {
+      tick();
+      raf = requestAnimationFrame(loop);
+    };
+    mo = new MutationObserver(tick);
+    mo.observe(document.documentElement, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      characterData: true,
+    });
+    document.addEventListener('input', tick, true);
+    document.addEventListener('change', tick, true);
+    tick();
+    raf = requestAnimationFrame(loop);
+  });
 }
 
 function until(ready: () => boolean): Promise<void> {
@@ -29,7 +85,7 @@ function until(ready: () => boolean): Promise<void> {
       subtree: true,
       childList: true,
       attributes: true,
-      attributeFilter: ['disabled', 'class'],
+      characterData: true,
     });
     const loop = () => {
       if (run()) return;
@@ -39,33 +95,55 @@ function until(ready: () => boolean): Promise<void> {
   });
 }
 
-function yieldMain(): Promise<void> {
-  return new Promise((r) =>
-    queueMicrotask(() => queueMicrotask(() => requestAnimationFrame(() => requestAnimationFrame(() => r())))),
+function clickById(id: string): void {
+  document.getElementById(id)?.click();
+}
+
+function showsServerTimerError(): boolean {
+  return (document.body?.innerText ?? '').includes('Please wait for the timer to complete');
+}
+
+function step2GoReady(): boolean {
+  const b = document.getElementById('goToLinkBtn');
+  return (
+    b instanceof HTMLButtonElement &&
+    !b.disabled &&
+    !b.classList.contains('hidden') &&
+    isCloudflareHumanVerificationDone(undefined, { requireTurnstileToken: true })
   );
 }
 
 async function step1(): Promise<void> {
   const gen = document.getElementById('generateBtn');
   if (gen instanceof HTMLButtonElement && !gen.disabled && !gen.classList.contains('hidden')) {
-    gen.click();
-    await yieldMain();
+    clickById('generateBtn');
   }
-  await until(() => {
+  const continueOk = (): boolean => {
     const c = document.getElementById('continueBtn');
-    return c instanceof HTMLButtonElement && !c.disabled && !c.classList.contains('hidden');
-  });
-  document.getElementById('continueBtn')?.click();
+    return (
+      c instanceof HTMLButtonElement &&
+      !c.disabled &&
+      !c.classList.contains('hidden') &&
+      (headingIncludes('Complete') || headingIncludes('Step 1'))
+    );
+  };
+  await until(continueOk);
+  await untilStable(continueOk, 600);
+  await settle(400);
+  clickById('continueBtn');
 }
 
 async function step2(): Promise<void> {
-  await until(() => {
-    const b = document.getElementById('goToLinkBtn');
-    const t = document.querySelector<HTMLInputElement>(TS)?.value?.trim() ?? '';
-    return b instanceof HTMLButtonElement && !b.disabled && t.length > 0;
-  });
-  await yieldMain();
-  document.getElementById('goToLinkBtn')?.click();
+  await until(() => headingIncludes('Ready'));
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await until(() => step2GoReady());
+    await untilStable(step2GoReady, 900);
+    await settle(700);
+    clickById('goToLinkBtn');
+    await settle(500);
+    if (!showsServerTimerError()) return;
+    await settle(attempt === 0 ? 1400 : 900);
+  }
 }
 
 function boot(): void {
@@ -77,6 +155,11 @@ function boot(): void {
 
 export function initXdmoviesLatestnewsAutomation(): void {
   if (window !== window.top) return;
+  if (PATH.test(location.pathname)) {
+    try {
+      chrome.runtime.sendMessage({ type: MSG_VISIBILITY });
+    } catch {}
+  }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot, { once: true });
   } else {

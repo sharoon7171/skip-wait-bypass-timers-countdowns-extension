@@ -16,11 +16,6 @@ export function runDocumentVisibilitySpoof(): void {
       writable: true,
     });
   } catch {}
-  const stop = (e: Event) => e.stopImmediatePropagation();
-  const events = ['visibilitychange', 'blur', 'focus', 'mouseleave', 'mouseout', 'lostpointercapture'];
-  for (const ev of events) document.addEventListener(ev, stop, true);
-  window.addEventListener('blur', stop, true);
-  window.addEventListener('focus', stop, true);
 }
 
 const XDM_INTERSTITIAL = /^\/(?:r|download)\/[^/]+/;
@@ -28,7 +23,7 @@ const XDM_INTERSTITIAL = /^\/(?:r|download)\/[^/]+/;
 export function initDocumentVisibilitySpoof(): void {
   chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
     if (info.status !== 'loading') return;
-    const raw = tab.url;
+    const raw = tab.url || tab.pendingUrl;
     if (!raw || !URL.canParse(raw)) return;
     if (!XDM_INTERSTITIAL.test(new URL(raw).pathname)) return;
     void chrome.scripting.executeScript({

@@ -11,7 +11,18 @@ function getCfClearance(): string | null {
   return document.cookie.match(CF_CLEARANCE_REGEX)?.[1] ?? null;
 }
 
-export function isCloudflareHumanVerificationDone(container?: Element): boolean {
+export type CloudflareVerifyOptions = {
+  requireTurnstileToken?: boolean;
+};
+
+export function isCloudflareHumanVerificationDone(
+  container?: Element,
+  opts?: CloudflareVerifyOptions,
+): boolean {
   const root = container ?? document;
-  return getTurnstileToken(root) !== null || getCfClearance() !== null;
+  const token = getTurnstileToken(root);
+  if (opts?.requireTurnstileToken) {
+    return token !== null;
+  }
+  return token !== null || getCfClearance() !== null;
 }
