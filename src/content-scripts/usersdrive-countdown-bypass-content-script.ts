@@ -2,9 +2,8 @@ import { isCloudflareHumanVerificationDone } from '../utils/cloudflare-verifier'
 import { SKIPWAIT_CARD_STYLES } from '../utils/skipwait-card-styles';
 
 const DIRECT_LINK_RE = /href\s*=\s*["']\s*(https?:\/\/[^"'\s]+\/[^"'\s]*\.[A-Za-z0-9]+)["'][^>]*>\s*(?:<[^>]*>\s*)*Click\s*To\s*Download/i;
-const FILE_PATH_RE = /^\/[a-z0-9]{8,24}(?:\.html)?$/i;
-const FORM_SIGNATURE = 'form input[name="op"][value="download2"]';
 const TURNSTILE_WIDGET_SELECTOR = '.cf-turnstile';
+const FORM_SIGNATURE = `form ${TURNSTILE_WIDGET_SELECTOR}`;
 const BACKDROP_Z = '2147483640';
 const CARD_Z = '2147483645';
 const WIDGET_Z = '2147483646';
@@ -63,8 +62,7 @@ async function fetchDirectLink(form: HTMLFormElement): Promise<string | null> {
 }
 
 function findForm(): HTMLFormElement | null {
-  const input = document.querySelector(FORM_SIGNATURE);
-  return input instanceof HTMLInputElement ? input.form : null;
+  return document.querySelector(FORM_SIGNATURE)?.closest('form') ?? null;
 }
 
 function startDownload(url: string): void {
@@ -123,6 +121,5 @@ async function run(): Promise<void> {
 }
 
 export function initUsersdriveAutomation(): void {
-  if (!FILE_PATH_RE.test(window.location.pathname)) return;
   void run();
 }

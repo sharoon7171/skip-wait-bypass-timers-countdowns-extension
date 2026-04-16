@@ -27,6 +27,7 @@ import { initShrtflyRedirect } from './shrtfly-redirect-content-script';
 import { initStbemuiptvcodesWpsafelink } from './stbemuiptvcodes-wpsafelink-content-script';
 import { initSub2getRedirect } from './sub2get-redirect-content-script';
 import { initTeknoasianHqChain } from './teknoasian-hq-chain-content-script';
+import { initUploadrarAutomation } from './uploadrar-countdown-bypass-content-script';
 import { initUsersdriveAutomation } from './usersdrive-countdown-bypass-content-script';
 
 const INITS = [
@@ -55,6 +56,7 @@ const INITS = [
   initStbemuiptvcodesWpsafelink,
   initSub2getRedirect,
   initTeknoasianHqChain,
+  initUploadrarAutomation,
   initUsersdriveAutomation,
 ];
 
