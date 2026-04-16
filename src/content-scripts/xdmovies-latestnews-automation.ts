@@ -1,156 +1,238 @@
-import { isCloudflareHumanVerificationDone } from '../utils/cloudflare-verifier';
-
 const PATH = /^\/(?:r|download)\/[^/]+/;
 const MSG_VISIBILITY = 'INJECT_VISIBILITY_SPOOF';
+const OVERLAY_ID = 'skip-wait-xdmovies-overlay';
+const MSG_SOURCE = 'skip-wait-xdmovies';
+const SERVER_WAIT_MS = 13_500;
+const TURNSTILE_SITEKEY = '0x4AAAAAACwMJhFoINTv6AGb';
+const XDMOVIES_MAIN_WORLD_RUN = 'XDMOVIES_MAIN_WORLD_RUN';
 
-function isInterstitialPath(): boolean {
-  return PATH.test(location.pathname);
+async function xdmoviesFingerprint(): Promise<string> {
+  const c: string[] = [];
+  c.push(`${screen.width}x${screen.height}x${screen.colorDepth}`);
+  c.push(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  c.push(navigator.language || (navigator as Navigator & { userLanguage?: string }).userLanguage || '');
+  c.push(navigator.platform);
+  c.push(String(navigator.hardwareConcurrency || 'unknown'));
+  c.push(String((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 'unknown'));
+  try {
+    const cv = document.createElement('canvas');
+    const x = cv.getContext('2d');
+    if (x) {
+      x.textBaseline = 'top';
+      x.font = '14px Arial';
+      x.fillStyle = '#f60';
+      x.fillRect(125, 1, 62, 20);
+      x.fillStyle = '#069';
+      x.fillText('XDMovies,🎬', 2, 15);
+      x.fillStyle = 'rgba(102, 204, 0, 0.7)';
+      x.fillText('XDMovies,🎬', 4, 17);
+      c.push(cv.toDataURL().slice(-50));
+    } else c.push('canvas_error');
+  } catch {
+    c.push('canvas_error');
+  }
+  try {
+    const cv = document.createElement('canvas');
+    const gl = (cv.getContext('webgl') || cv.getContext('experimental-webgl')) as WebGLRenderingContext | null;
+    if (gl) {
+      const di = gl.getExtension('WEBGL_debug_renderer_info');
+      if (di) c.push(String(gl.getParameter(di.UNMASKED_RENDERER_WEBGL)));
+    }
+  } catch {
+    c.push('webgl_error');
+  }
+  c.push('ontouchstart' in window ? 'touch' : 'no_touch');
+  c.push(String(navigator.plugins ? navigator.plugins.length : 0));
+  c.push(String(navigator.cookieEnabled));
+  c.push(String(navigator.doNotTrack || 'unset'));
+  const s = c.join('|||');
+  if (!crypto?.subtle) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s.charCodeAt(i);
+      h = (h << 5) - h + ch;
+      h = h & h;
+    }
+    return Math.abs(h).toString(16).padStart(32, '0').slice(0, 32);
+  }
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
 }
 
-function headingEl(): HTMLElement | null {
-  return document.getElementById('title') ?? document.querySelector('main h1');
+function pathCode(): string | null {
+  const p = location.pathname.split('/').filter(Boolean);
+  const last = p[p.length - 1];
+  if (!last || last === 'r' || last === 'download') return null;
+  return last;
 }
 
-function headingIncludes(sub: string): boolean {
-  const t = headingEl()?.textContent ?? '';
-  return t.includes(sub);
+function overlayCss(): string {
+  const o = OVERLAY_ID;
+  return `#${o}{position:fixed;inset:0;z-index:2147483646;display:flex;align-items:flex-start;justify-content:center;padding:24px;box-sizing:border-box;background:rgba(15,23,42,.92);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#f8fafc}#${o}.sw-pass{pointer-events:none;background:rgba(15,23,42,.45)}#${o} .sw-card{max-width:420px;width:100%;border-radius:16px;padding:28px 24px;background:linear-gradient(145deg,#1e293b 0%,#0f172a 100%);border:1px solid rgba(148,163,184,.25);box-shadow:0 25px 50px -12px rgba(0,0,0,.5);pointer-events:none}#${o} .sw-brand{font-size:1.35rem;font-weight:700;letter-spacing:-.02em;color:#38bdf8;margin-bottom:8px}#${o} .sw-note{font-size:.875rem;line-height:1.5;color:#94a3b8;margin-bottom:20px}#${o} .sw-status{font-size:.9rem;color:#e2e8f0;min-height:1.4em;margin-bottom:12px}#${o} .sw-count{font-size:2.75rem;font-weight:700;font-variant-numeric:tabular-nums;color:#f1f5f9;text-align:center;margin:8px 0 4px}#${o} .sw-count-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;text-align:center}#${o} .sw-count-hint{font-size:.8rem;color:#94a3b8;text-align:center;margin-top:4px}#${o} .sw-err{font-size:.85rem;color:#fca5a5;margin-top:12px;line-height:1.45}`;
 }
 
-function settle(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
+function fmtRemain(ms: number): string {
+  return `${(Math.max(0, ms) / 1000).toFixed(2)} s`;
 }
 
-function untilStable(ready: () => boolean, stableMs: number): Promise<void> {
-  return new Promise((resolve) => {
-    let okSince: number | null = null;
-    let raf = 0;
-    let mo: MutationObserver | undefined;
-    const stop = () => {
-      cancelAnimationFrame(raf);
-      mo?.disconnect();
-      document.removeEventListener('input', tick, true);
-      document.removeEventListener('change', tick, true);
-    };
-    const tick = (): void => {
-      const now = performance.now();
-      if (!ready()) {
-        okSince = null;
+function createOverlay() {
+  const root = document.createElement('div');
+  root.id = OVERLAY_ID;
+  const st = document.createElement('style');
+  st.textContent = overlayCss();
+  root.appendChild(st);
+  const card = document.createElement('div');
+  card.className = 'sw-card';
+  const brand = document.createElement('div');
+  brand.className = 'sw-brand';
+  brand.textContent = 'Skip Wait';
+  const note = document.createElement('div');
+  note.className = 'sw-note';
+  note.textContent =
+    'Cloudflare runs on the page below (same as the site). Complete it while the timer runs; the overlay does not block clicks.';
+  const status = document.createElement('div');
+  status.className = 'sw-status';
+  status.textContent = 'Preparing…';
+  const count = document.createElement('div');
+  count.className = 'sw-count';
+  count.style.display = 'none';
+  const countLabel = document.createElement('div');
+  countLabel.className = 'sw-count-label';
+  countLabel.style.display = 'none';
+  const countHint = document.createElement('div');
+  countHint.className = 'sw-count-hint';
+  countHint.style.display = 'none';
+  const err = document.createElement('div');
+  err.className = 'sw-err';
+  card.append(brand, note, status, count, countLabel, countHint, err);
+  root.appendChild(card);
+  let rafId = 0;
+  return {
+    root,
+    setStatus: (t: string) => {
+      status.textContent = t;
+    },
+    setCountdown: (n: number | null) => {
+      if (n === null) {
+        count.style.display = countLabel.style.display = countHint.style.display = 'none';
         return;
       }
-      if (okSince === null) okSince = now;
-      if (now - okSince >= stableMs) {
-        stop();
-        resolve();
+      count.style.display = countLabel.style.display = 'block';
+      count.textContent = String(Math.max(0, n));
+    },
+    startRealtimeCountdown: (endTs: number) => {
+      count.style.display = countLabel.style.display = countHint.style.display = 'block';
+      countLabel.textContent = 'Time until unlock (server)';
+      countHint.textContent = 'Unlock + verify in parallel';
+      const tick = (): void => {
+        const left = endTs - Date.now();
+        count.textContent = fmtRemain(left);
+        if (left <= 0) {
+          count.textContent = '0.00 s';
+          rafId = 0;
+          return;
+        }
+        rafId = requestAnimationFrame(tick);
+      };
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(tick);
+    },
+    stopRealtimeCountdown: () => {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    },
+    setCountHint: (t: string | null) => {
+      if (t === null) countHint.style.display = 'none';
+      else {
+        countHint.textContent = t;
+        countHint.style.display = 'block';
       }
-    };
-    const loop = (): void => {
-      tick();
-      raf = requestAnimationFrame(loop);
-    };
-    mo = new MutationObserver(tick);
-    mo.observe(document.documentElement, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      characterData: true,
-    });
-    document.addEventListener('input', tick, true);
-    document.addEventListener('change', tick, true);
-    tick();
-    raf = requestAnimationFrame(loop);
-  });
-}
-
-function until(ready: () => boolean): Promise<void> {
-  return new Promise((resolve) => {
-    let raf = 0;
-    let mo: MutationObserver | undefined;
-    const stop = () => {
-      cancelAnimationFrame(raf);
-      document.removeEventListener('input', run, true);
-      document.removeEventListener('change', run, true);
-      mo?.disconnect();
-    };
-    const run = (): boolean => {
-      if (!ready()) return false;
-      stop();
-      resolve();
-      return true;
-    };
-    if (run()) return;
-    mo = new MutationObserver(run);
-    document.addEventListener('input', run, true);
-    document.addEventListener('change', run, true);
-    mo.observe(document.documentElement, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      characterData: true,
-    });
-    const loop = () => {
-      if (run()) return;
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-  });
-}
-
-function clickById(id: string): void {
-  document.getElementById(id)?.click();
-}
-
-function showsServerTimerError(): boolean {
-  return (document.body?.innerText ?? '').includes('Please wait for the timer to complete');
-}
-
-function step2GoReady(): boolean {
-  const b = document.getElementById('goToLinkBtn');
-  return (
-    b instanceof HTMLButtonElement &&
-    !b.disabled &&
-    !b.classList.contains('hidden') &&
-    isCloudflareHumanVerificationDone(undefined, { requireTurnstileToken: true })
-  );
-}
-
-async function step1(): Promise<void> {
-  const gen = document.getElementById('generateBtn');
-  if (gen instanceof HTMLButtonElement && !gen.disabled && !gen.classList.contains('hidden')) {
-    clickById('generateBtn');
-  }
-  const continueOk = (): boolean => {
-    const c = document.getElementById('continueBtn');
-    return (
-      c instanceof HTMLButtonElement &&
-      !c.disabled &&
-      !c.classList.contains('hidden') &&
-      (headingIncludes('Complete') || headingIncludes('Step 1'))
-    );
+    },
+    setError: (t: string | null) => {
+      err.textContent = t ?? '';
+      err.style.display = t ? 'block' : 'none';
+    },
+    setPageVerifyMode: (on: boolean) => root.classList.toggle('sw-pass', on),
   };
-  await until(continueOk);
-  await untilStable(continueOk, 600);
-  await settle(400);
-  clickById('continueBtn');
 }
 
-async function step2(): Promise<void> {
-  await until(() => headingIncludes('Ready'));
-  for (let attempt = 0; attempt < 3; attempt++) {
-    await until(() => step2GoReady());
-    await untilStable(step2GoReady, 900);
-    await settle(700);
-    clickById('goToLinkBtn');
-    await settle(500);
-    if (!showsServerTimerError()) return;
-    await settle(attempt === 0 ? 1400 : 900);
+async function runDirectFlow(): Promise<void> {
+  if (!PATH.test(location.pathname) || document.getElementById(OVERLAY_ID)) return;
+  const code = pathCode();
+  if (!code) return;
+  const ui = createOverlay();
+  document.documentElement.appendChild(ui.root);
+  const onMessage = (ev: MessageEvent): void => {
+    if (ev.source !== window || ev.origin !== window.location.origin) return;
+    const d = ev.data as { source?: string; phase?: string; waitEndTs?: number; message?: string };
+    if (!d || d.source !== MSG_SOURCE) return;
+    switch (d.phase) {
+      case 'session':
+        ui.setStatus('Starting session…');
+        ui.setError(null);
+        break;
+      case 'parallel': {
+        const endTs =
+          typeof d.waitEndTs === 'number' ? d.waitEndTs : Date.now() + SERVER_WAIT_MS;
+        ui.setStatus('Use Cloudflare on the page — timer runs in parallel');
+        ui.setPageVerifyMode(true);
+        ui.startRealtimeCountdown(endTs);
+        break;
+      }
+      case 'complete':
+        ui.stopRealtimeCountdown();
+        ui.setStatus('Unlocking your link…');
+        break;
+      case 'redirect':
+        ui.setStatus('Redirecting…');
+        break;
+      case 'turnstile_error':
+      case 'turnstile_expired':
+        ui.setStatus('Verification issue — wait or refresh if this stalls.');
+        break;
+      case 'error':
+        ui.stopRealtimeCountdown();
+        ui.setCountdown(null);
+        ui.setCountHint(null);
+        ui.setStatus('Something went wrong');
+        ui.setError(d.message ?? 'Unknown error');
+        break;
+    }
+  };
+  window.addEventListener('message', onMessage);
+  try {
+    ui.setStatus('Building browser fingerprint…');
+    const fingerprint = await xdmoviesFingerprint();
+    ui.setStatus('Connecting…');
+    chrome.runtime.sendMessage(
+      {
+        type: XDMOVIES_MAIN_WORLD_RUN,
+        payload: { code, fingerprint, waitMs: SERVER_WAIT_MS, sitekey: TURNSTILE_SITEKEY, msgSource: MSG_SOURCE },
+      },
+      (resp: { ok?: boolean; error?: string } | undefined) => {
+        if (chrome.runtime.lastError) {
+          ui.setStatus('Could not start');
+          ui.setError(chrome.runtime.lastError.message ?? 'Extension messaging failed');
+          window.removeEventListener('message', onMessage);
+          return;
+        }
+        if (resp?.ok === false) {
+          ui.setStatus('Could not start');
+          ui.setError(resp.error ?? 'Could not inject on this page');
+          window.removeEventListener('message', onMessage);
+        }
+      },
+    );
+  } catch (e) {
+    ui.setStatus('Could not start');
+    ui.setError(String(e instanceof Error ? e.message : e));
+    window.removeEventListener('message', onMessage);
   }
 }
 
 function boot(): void {
-  if (!isInterstitialPath()) return;
-  const q = new URLSearchParams(location.search);
-  if (q.get('step') === '2' && q.get('sid')) void step2();
-  else void step1();
+  if (!PATH.test(location.pathname)) return;
+  void runDirectFlow();
 }
 
 export function initXdmoviesLatestnewsAutomation(): void {
@@ -160,9 +242,6 @@ export function initXdmoviesLatestnewsAutomation(): void {
       chrome.runtime.sendMessage({ type: MSG_VISIBILITY });
     } catch {}
   }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot, { once: true });
-  } else {
-    boot();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+  else boot();
 }
