@@ -1,12 +1,17 @@
-import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
+import { whenDomParsed } from '../utils/domain-check';
 import { hasCaptchaToken } from '../utils/captcha-verifier';
 
-const ADLINKFLY_HOSTS = ['adfly.site', 'demo-adlinkfly.themeson.com', 'pahe.plus', 'wu8.in'] as const;
+export const ADLINKFLY_LINKS_GO_SHELL_SEL =
+  '#link-view,#go-link,form[action*="/links/go"],a.get-link';
 
 const RECAPTCHA_NAMES = ['g-recaptcha-response'];
 
 const isRealUrl = (s: string): boolean =>
   s.startsWith('http://') || s.startsWith('https://');
+
+export function isAdlinkflyLinksGoShell(doc: Document = document): boolean {
+  return !!doc.querySelector(ADLINKFLY_LINKS_GO_SHELL_SEL);
+}
 
 function onCaptchaPage(form: HTMLFormElement): void {
   if (!form.querySelector('[name="g-recaptcha-response"]')) return;
@@ -50,46 +55,50 @@ function onTimerPage(posted: { done: boolean }): boolean {
   return false;
 }
 
-export function attachAdlinkflyLinksGo(): void {
-  whenDomParsed(() => {
-    const posted = { done: false };
-    const run = (): boolean => {
-      const linkView = document.getElementById('link-view') as HTMLFormElement | null;
-      if (linkView) {
-        onCaptchaPage(linkView);
-        return false;
-      }
-      return onTimerPage(posted);
-    };
+function startAdlinkflyLinksGo(): void {
+  const posted = { done: false };
+  const run = (): boolean => {
+    const linkView = document.getElementById('link-view') as HTMLFormElement | null;
+    if (linkView) {
+      onCaptchaPage(linkView);
+      return false;
+    }
+    return onTimerPage(posted);
+  };
 
-    const observer = new MutationObserver(() => {
-      if (run()) observer.disconnect();
-    });
-
-    chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
-    if (run()) return;
-    observer.observe(document.documentElement, {
-      attributeFilter: ['href'],
-      attributes: true,
-      childList: true,
-      subtree: true,
-    });
-    let micro = 0;
-    const microBurst = (): void => {
-      if (run()) return void observer.disconnect();
-      if (++micro < 48) queueMicrotask(microBurst);
-    };
-    queueMicrotask(microBurst);
-    let frames = 0;
-    const raf = (): void => {
-      if (run()) return void observer.disconnect();
-      if (++frames < 960) requestAnimationFrame(raf);
-    };
-    requestAnimationFrame(raf);
+  const observer = new MutationObserver(() => {
+    if (run()) observer.disconnect();
   });
+
+  chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
+  if (run()) return;
+  observer.observe(document.documentElement, {
+    attributeFilter: ['href'],
+    attributes: true,
+    childList: true,
+    subtree: true,
+  });
+  let micro = 0;
+  const microBurst = (): void => {
+    if (run()) return void observer.disconnect();
+    if (++micro < 48) queueMicrotask(microBurst);
+  };
+  queueMicrotask(microBurst);
+  let frames = 0;
+  const raf = (): void => {
+    if (run()) return void observer.disconnect();
+    if (++frames < 960) requestAnimationFrame(raf);
+  };
+  requestAnimationFrame(raf);
+}
+
+export function attachAdlinkflyLinksGo(): void {
+  whenDomParsed(startAdlinkflyLinksGo);
 }
 
 export function initAdlinkflyLinksGo(): void {
-  if (!isAllowedHost(ADLINKFLY_HOSTS)) return;
-  attachAdlinkflyLinksGo();
+  whenDomParsed(() => {
+    if (!isAdlinkflyLinksGoShell()) return;
+    startAdlinkflyLinksGo();
+  });
 }

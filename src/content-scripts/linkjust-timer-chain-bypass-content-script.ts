@@ -1,7 +1,6 @@
 import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
-import { attachAdlinkflyLinksGo } from './adlinkfly-links-go-content-script';
+import { attachAdlinkflyLinksGo, isAdlinkflyLinksGoShell } from './adlinkfly-links-go-content-script';
 
-const AD_SHELL_SEL = '#link-view,#go-link,form[action*="/links/go"],a.get-link';
 const LINKJUST = ['linkjust.com'] as const;
 const OBS_HOP: MutationObserverInit = {
   attributeFilter: ['href', 'style', 'class'],
@@ -34,10 +33,6 @@ function isTimerChainTemplate(doc: Document): boolean {
   const html = doc.documentElement.innerHTML;
   if (CHAIN_HTML_MARKERS.some((s) => html.includes(s))) return true;
   return /ViewArticle=|viewarticle=/i.test(html);
-}
-
-function isAdShell(doc: Document): boolean {
-  return !!doc.querySelector(AD_SHELL_SEL);
 }
 
 function isShortSlugPath(): boolean {
@@ -220,8 +215,9 @@ export function initLinkjustTimerChainBypass(): void {
   whenDomParsed(() => {
     const onLj = isAllowedHost(LINKJUST);
     if (onLj) {
-      if (!isShortSlugPath() && !isTimerChainTemplate(document) && !isAdShell(document)) return;
-      if (isAdShell(document)) attachAdlinkflyLinksGo();
+      if (!isShortSlugPath() && !isTimerChainTemplate(document) && !isAdlinkflyLinksGoShell(document))
+        return;
+      if (isAdlinkflyLinksGoShell(document)) attachAdlinkflyLinksGo();
       else runHopBypass();
       return;
     }
