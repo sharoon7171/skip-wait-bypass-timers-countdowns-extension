@@ -1,7 +1,3 @@
-import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
-import { attachAdlinkflyLinksGo, isAdlinkflyLinksGoShell } from './adlinkfly-links-go-content-script';
-
-const LINKJUST = ['linkjust.com'] as const;
 const OBS_HOP: MutationObserverInit = {
   attributeFilter: ['href', 'style', 'class'],
   attributes: true,
@@ -175,7 +171,12 @@ function extractNextHop(): string | null {
 }
 
 function runHopBypass(): void {
-  const onLj = isAllowedHost(LINKJUST);
+  let onLj = false;
+  try {
+    onLj = isLinkjustHost(new URL(window.location.href).hostname);
+  } catch {
+    onLj = false;
+  }
   const tpl = isTimerChainTemplate(document);
   const short = onLj && isShortSlugPath();
   if (!tpl && !short) return;
@@ -212,16 +213,28 @@ function runHopBypass(): void {
 }
 
 export function initLinkjustTimerChainBypass(): void {
-  whenDomParsed(() => {
-    const onLj = isAllowedHost(LINKJUST);
+  const go = (): void => {
+    let h = '';
+    try {
+      h = new URL(window.location.href).hostname.toLowerCase();
+    } catch {
+      return;
+    }
+    const onLj = isLinkjustHost(h);
     if (onLj) {
-      if (!isShortSlugPath() && !isTimerChainTemplate(document) && !isAdlinkflyLinksGoShell(document))
-        return;
-      if (isAdlinkflyLinksGoShell(document)) attachAdlinkflyLinksGo();
-      else runHopBypass();
+      if (!isShortSlugPath() && !isTimerChainTemplate(document)) return;
+      runHopBypass();
       return;
     }
     if (!isTimerChainTemplate(document)) return;
     runHopBypass();
-  });
+  };
+  go();
+  if (document.readyState === 'loading') {
+    document.addEventListener('readystatechange', function onReady() {
+      if (document.readyState === 'loading') return;
+      document.removeEventListener('readystatechange', onReady);
+      go();
+    });
+  }
 }

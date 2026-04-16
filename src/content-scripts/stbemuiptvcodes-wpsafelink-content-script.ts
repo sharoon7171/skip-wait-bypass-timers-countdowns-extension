@@ -1,8 +1,3 @@
-import { isAllowedHost } from '../utils/domain-check';
-import { getSafelinkRedirectUrl } from './wp-safelink-redirect-content-script';
-
-const HOST = 'stbemuiptvcodes.com';
-
 type LandingPayload = { go: string; token: string; enableHumanVerification: string };
 
 function parseLandingPayload(): LandingPayload | null {
@@ -44,20 +39,22 @@ function destinationFromGoB64(goB64: string): string | null {
 }
 
 export function initStbemuiptvcodesWpsafelink(): void {
-  if (!isAllowedHost([HOST])) return;
+  if (!new URLSearchParams(window.location.search).has('wpsafelink')) return;
+
   const run = (): void => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('wpsafelink')) {
-      const payload = parseLandingPayload();
-      if (!payload) return;
-      if (!applyLandingCookies(payload)) return;
-      const dest = destinationFromGoB64(payload.go);
-      window.location.href = dest ?? `https://${HOST}/`;
-      return;
-    }
-    const url = getSafelinkRedirectUrl();
-    if (url) window.location.href = url;
+    const payload = parseLandingPayload();
+    if (!payload) return;
+    if (!applyLandingCookies(payload)) return;
+    const dest = destinationFromGoB64(payload.go);
+    window.location.href = dest ?? `${window.location.origin}/`;
   };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
-  else run();
+
+  run();
+  if (document.readyState === 'loading') {
+    document.addEventListener('readystatechange', function onReady() {
+      if (document.readyState === 'loading') return;
+      document.removeEventListener('readystatechange', onReady);
+      run();
+    });
+  }
 }

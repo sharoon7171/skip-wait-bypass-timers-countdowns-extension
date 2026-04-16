@@ -1,5 +1,7 @@
 import { initCoomeetIframeBootstrap } from './coomeet-iframe';
-import { initAdlinkflyLinksGo } from './adlinkfly-links-go-content-script';
+import './adlink-click-verify-poll-content-script';
+import './adlinkfly-links-go-content-script';
+import './wp-safelink-redirect-content-script';
 import { initAdlinkflyTokenPayloadRedirect } from './adlinkfly-token-payload-redirect-content-script';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article-content-script';
 import { initUhdmoviesCloudContentScript } from './uhdmovies-cloud-content-script';
@@ -11,7 +13,6 @@ import { initHdhub4uMainDomainRedirect } from './hdhub4u-main-domain-instant-red
 import { initHdhub4uTimerBypass } from './hdhub4u-timer-bypass-content-script';
 import { initHubcdnRedirect } from './hubcdn-redirect-content-script';
 import { initLinkjustTimerChainBypass } from './linkjust-timer-chain-bypass-content-script';
-import { initAdlinkClickVerifyPoll } from './adlink-click-verify-poll-content-script';
 import { initMoviesModContentScript } from './movies-mod-content-script';
 import { initHubcloudDrive } from './hubcloud-drive-content-script';
 import { initMultiup } from './multiup-content-script';
@@ -26,14 +27,11 @@ import { initStbemuiptvcodesWpsafelink } from './stbemuiptvcodes-wpsafelink-cont
 import { initSub2getRedirect } from './sub2get-redirect-content-script';
 import { initTeknoasianHqChain } from './teknoasian-hq-chain-content-script';
 import { initUsersdriveAutomation } from './usersdrive-countdown-bypass-content-script';
-import { initWpSafelinkRedirect } from './wp-safelink-redirect-content-script';
 
 const INITS = [
   initLinkjustTimerChainBypass,
-  initAdlinkClickVerifyPoll,
   initMoviesModContentScript,
   initUhdmoviesCloudContentScript,
-  initAdlinkflyLinksGo,
   initAdlinkflyTokenPayloadRedirect,
   initBitcotasksReadArticle,
   initClipiRedirect,
@@ -56,7 +54,6 @@ const INITS = [
   initSub2getRedirect,
   initTeknoasianHqChain,
   initUsersdriveAutomation,
-  initWpSafelinkRedirect,
 ];
 
 function currentHostname(): string {

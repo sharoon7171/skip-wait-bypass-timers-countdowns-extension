@@ -1,9 +1,6 @@
-import { isAllowedHost } from '../utils/domain-check';
-
-const ALLOWED_HOSTS = ['demo-safelink.themeson.com', 'dev-safelink.themeson.com'];
 const SAFELINK_RE = /https?:\/\/[^"'\s]+safelink_redirect=[A-Za-z0-9+/=]+/;
 
-export function getSafelinkRedirectUrl(): string | null {
+function getSafelinkRedirectUrl(): string | null {
   const href = document.querySelector<HTMLAnchorElement>('a[href*="safelink_redirect"]')?.href?.trim();
   if (href && /^https?:\/\//.test(href)) return href;
   for (const script of document.scripts) {
@@ -13,12 +10,47 @@ export function getSafelinkRedirectUrl(): string | null {
   return null;
 }
 
-export function initWpSafelinkRedirect(): void {
-  if (!isAllowedHost(ALLOWED_HOSTS)) return;
-  const run = (): void => {
-    const url = getSafelinkRedirectUrl();
-    if (url) window.location.href = url;
-  };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
-  else run();
+function hasSafelinkHint(): boolean {
+  if (document.querySelector('a[href*="safelink_redirect"]')) return true;
+  for (const s of document.scripts) {
+    if (s.textContent?.includes('safelink_redirect')) return true;
+  }
+  return false;
 }
+
+function initWpSafelinkRedirect(): void {
+  const tryGo = (): boolean => {
+    const url = getSafelinkRedirectUrl();
+    if (!url) return false;
+    window.location.href = url;
+    return true;
+  };
+
+  if (tryGo()) return;
+  if (document.readyState === 'complete') return;
+  if (document.readyState === 'interactive' && !hasSafelinkHint()) return;
+
+  const root = document.documentElement;
+  if (!root) return;
+
+  let mo: MutationObserver | null = null;
+  function teardown(): void {
+    mo?.disconnect();
+    mo = null;
+    document.removeEventListener('readystatechange', onState);
+  }
+  const onState = (): void => {
+    if (document.readyState === 'loading') return;
+    if (tryGo()) return teardown();
+    if (document.readyState === 'interactive' && !hasSafelinkHint()) teardown();
+    else if (document.readyState === 'complete') teardown();
+  };
+  mo = new MutationObserver(() => {
+    if (tryGo()) teardown();
+  });
+  mo.observe(root, { childList: true, subtree: true });
+  document.addEventListener('readystatechange', onState);
+  if (document.readyState !== 'loading') onState();
+}
+
+initWpSafelinkRedirect();

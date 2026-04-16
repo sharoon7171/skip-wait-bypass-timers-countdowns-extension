@@ -1,16 +1,32 @@
-import { whenDomParsed } from '../utils/domain-check';
 import { hasCaptchaToken } from '../utils/captcha-verifier';
 
-export const ADLINKFLY_LINKS_GO_SHELL_SEL =
-  '#link-view,#go-link,form[action*="/links/go"],a.get-link';
+const LINKS_GO_SHELL_SEL = '#link-view,#go-link,form[action*="/links/go"],a.get-link';
 
 const RECAPTCHA_NAMES = ['g-recaptcha-response'];
 
 const isRealUrl = (s: string): boolean =>
   s.startsWith('http://') || s.startsWith('https://');
 
-export function isAdlinkflyLinksGoShell(doc: Document = document): boolean {
-  return !!doc.querySelector(ADLINKFLY_LINKS_GO_SHELL_SEL);
+function isAdlinkflyLinksGoShell(doc: Document = document): boolean {
+  return !!doc.querySelector(LINKS_GO_SHELL_SEL);
+}
+
+function hasLinksGoHint(): boolean {
+  if (isAdlinkflyLinksGoShell()) return true;
+  for (const s of document.scripts) {
+    if (s.textContent?.includes('/links/go')) return true;
+  }
+  return false;
+}
+
+function runWhenNotLoading(run: () => void): void {
+  if (document.readyState !== 'loading') run();
+  else
+    document.addEventListener('readystatechange', function onReady() {
+      if (document.readyState === 'loading') return;
+      document.removeEventListener('readystatechange', onReady);
+      run();
+    });
 }
 
 function onCaptchaPage(form: HTMLFormElement): void {
@@ -65,11 +81,9 @@ function startAdlinkflyLinksGo(): void {
     }
     return onTimerPage(posted);
   };
-
   const observer = new MutationObserver(() => {
     if (run()) observer.disconnect();
   });
-
   chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
   if (run()) return;
   observer.observe(document.documentElement, {
@@ -85,20 +99,47 @@ function startAdlinkflyLinksGo(): void {
   };
   queueMicrotask(microBurst);
   let frames = 0;
-  const raf = (): void => {
+  const rafLoop = (): void => {
     if (run()) return void observer.disconnect();
-    if (++frames < 960) requestAnimationFrame(raf);
+    if (++frames < 960) requestAnimationFrame(rafLoop);
   };
-  requestAnimationFrame(raf);
+  requestAnimationFrame(rafLoop);
 }
 
-export function attachAdlinkflyLinksGo(): void {
-  whenDomParsed(startAdlinkflyLinksGo);
-}
-
-export function initAdlinkflyLinksGo(): void {
-  whenDomParsed(() => {
-    if (!isAdlinkflyLinksGoShell()) return;
+function initAdlinkflyLinksGo(): void {
+  let engaged = false;
+  const tryStart = (): void => {
+    if (engaged || !isAdlinkflyLinksGoShell()) return;
+    engaged = true;
     startAdlinkflyLinksGo();
+  };
+  tryStart();
+  if (engaged) return;
+  if (document.readyState === 'complete') return;
+  if (document.readyState === 'interactive' && !hasLinksGoHint()) return;
+  const root = document.documentElement;
+  if (!root) return void runWhenNotLoading(tryStart);
+
+  let mo: MutationObserver | null = null;
+  const onReadyState = (): void => {
+    if (document.readyState === 'loading') return;
+    tryStart();
+    if (engaged) return stop();
+    if (document.readyState === 'interactive' && !hasLinksGoHint()) stop();
+    else if (document.readyState === 'complete') stop();
+  };
+  function stop(): void {
+    mo?.disconnect();
+    mo = null;
+    document.removeEventListener('readystatechange', onReadyState);
+  }
+  mo = new MutationObserver(() => {
+    tryStart();
+    if (engaged) stop();
   });
+  mo.observe(root, { childList: true, subtree: true });
+  document.addEventListener('readystatechange', onReadyState);
+  onReadyState();
 }
+
+initAdlinkflyLinksGo();
