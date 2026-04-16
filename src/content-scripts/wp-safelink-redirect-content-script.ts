@@ -1,11 +1,14 @@
 const SAFELINK_RE = /https?:\/\/[^"'\s]+safelink_redirect=[A-Za-z0-9+/=]+/;
+const scriptsWithNoSafelinkUrl = new WeakSet<Element>();
 
 function getSafelinkRedirectUrl(): string | null {
   const href = document.querySelector<HTMLAnchorElement>('a[href*="safelink_redirect"]')?.href?.trim();
   if (href && /^https?:\/\//.test(href)) return href;
   for (const script of document.scripts) {
+    if (scriptsWithNoSafelinkUrl.has(script)) continue;
     const m = script.textContent?.match(SAFELINK_RE);
     if (m?.[0]) return m[0];
+    scriptsWithNoSafelinkUrl.add(script);
   }
   return null;
 }
@@ -34,7 +37,12 @@ function initWpSafelinkRedirect(): void {
   if (!root) return;
 
   let mo: MutationObserver | null = null;
+  let moRaf = 0;
   function teardown(): void {
+    if (moRaf) {
+      cancelAnimationFrame(moRaf);
+      moRaf = 0;
+    }
     mo?.disconnect();
     mo = null;
     document.removeEventListener('readystatechange', onState);
@@ -46,7 +54,11 @@ function initWpSafelinkRedirect(): void {
     else if (document.readyState === 'complete') teardown();
   };
   mo = new MutationObserver(() => {
-    if (tryGo()) teardown();
+    if (moRaf) return;
+    moRaf = requestAnimationFrame(() => {
+      moRaf = 0;
+      if (tryGo()) teardown();
+    });
   });
   mo.observe(root, { childList: true, subtree: true });
   document.addEventListener('readystatechange', onState);

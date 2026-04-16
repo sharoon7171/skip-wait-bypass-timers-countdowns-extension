@@ -1,3 +1,4 @@
+import { initXdmoviesLatestnewsAutomation } from './xdmovies-latestnews-automation';
 import { initCoomeetIframeBootstrap } from './coomeet-iframe';
 import './adlink-click-verify-poll-content-script';
 import './adlinkfly-links-go-content-script';
@@ -29,6 +30,7 @@ import { initTeknoasianHqChain } from './teknoasian-hq-chain-content-script';
 import { initUsersdriveAutomation } from './usersdrive-countdown-bypass-content-script';
 
 const INITS = [
+  initXdmoviesLatestnewsAutomation,
   initLinkjustTimerChainBypass,
   initMoviesModContentScript,
   initUhdmoviesCloudContentScript,
