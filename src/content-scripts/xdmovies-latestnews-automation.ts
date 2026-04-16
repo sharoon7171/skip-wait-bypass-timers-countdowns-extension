@@ -2,7 +2,7 @@ const PATH = /^\/(?:r|download)\/[^/]+/;
 const MSG_VISIBILITY = 'INJECT_VISIBILITY_SPOOF';
 const OVERLAY_ID = 'skip-wait-xdmovies-overlay';
 const MSG_SOURCE = 'skip-wait-xdmovies';
-const SERVER_WAIT_MS = 13_500;
+const SERVER_WAIT_MS = 10_500;
 const TURNSTILE_SITEKEY = '0x4AAAAAACwMJhFoINTv6AGb';
 const XDMOVIES_MAIN_WORLD_RUN = 'XDMOVIES_MAIN_WORLD_RUN';
 
@@ -68,7 +68,7 @@ function pathCode(): string | null {
 
 function overlayCss(): string {
   const o = OVERLAY_ID;
-  return `#${o}{position:fixed;inset:0;z-index:2147483646;display:flex;align-items:flex-start;justify-content:center;padding:24px;box-sizing:border-box;background:rgba(15,23,42,.92);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#f8fafc}#${o}.sw-pass{pointer-events:none;background:rgba(15,23,42,.45)}#${o} .sw-card{max-width:420px;width:100%;border-radius:16px;padding:28px 24px;background:linear-gradient(145deg,#1e293b 0%,#0f172a 100%);border:1px solid rgba(148,163,184,.25);box-shadow:0 25px 50px -12px rgba(0,0,0,.5);pointer-events:none}#${o} .sw-brand{font-size:1.35rem;font-weight:700;letter-spacing:-.02em;color:#38bdf8;margin-bottom:8px}#${o} .sw-note{font-size:.875rem;line-height:1.5;color:#94a3b8;margin-bottom:20px}#${o} .sw-status{font-size:.9rem;color:#e2e8f0;min-height:1.4em;margin-bottom:12px}#${o} .sw-count{font-size:2.75rem;font-weight:700;font-variant-numeric:tabular-nums;color:#f1f5f9;text-align:center;margin:8px 0 4px}#${o} .sw-count-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;text-align:center}#${o} .sw-count-hint{font-size:.8rem;color:#94a3b8;text-align:center;margin-top:4px}#${o} .sw-err{font-size:.85rem;color:#fca5a5;margin-top:12px;line-height:1.45}`;
+  return `#${o}{position:fixed;inset:0;z-index:2147483646;display:flex;align-items:flex-start;justify-content:center;padding:16px 20px 0;box-sizing:border-box;background:rgba(15,23,42,.92);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#f8fafc}#${o} .sw-card{max-width:420px;width:100%;border-radius:16px;padding:28px 24px;background:linear-gradient(145deg,#1e293b 0%,#0f172a 100%);border:1px solid rgba(148,163,184,.25);box-shadow:0 25px 50px -12px rgba(0,0,0,.5);pointer-events:none}#${o}.sw-pass{pointer-events:none;padding-bottom:0;background:linear-gradient(180deg,rgba(15,23,42,.92) 0%,rgba(15,23,42,.4) 26%,rgba(15,23,42,.08) 40%,transparent 50%)}#${o}.sw-pass .sw-card{max-height:min(44vh,360px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px 18px 16px}#${o} .sw-brand{font-size:1.35rem;font-weight:700;letter-spacing:-.02em;color:#38bdf8;margin-bottom:8px}#${o} .sw-note{font-size:.875rem;line-height:1.55;color:#cbd5e1;margin-bottom:16px}#${o} .sw-note strong{color:#e2e8f0;font-weight:600}#${o} .sw-status{font-size:.9rem;color:#e2e8f0;min-height:1.4em;margin-bottom:12px}#${o} .sw-count{font-size:2.75rem;font-weight:700;font-variant-numeric:tabular-nums;color:#f1f5f9;text-align:center;margin:8px 0 4px}#${o} .sw-count-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;text-align:center}#${o} .sw-count-hint{font-size:.8rem;color:#94a3b8;text-align:center;margin-top:4px}#${o} .sw-err{font-size:.85rem;color:#fca5a5;margin-top:12px;line-height:1.45}`;
 }
 
 function fmtRemain(ms: number): string {
@@ -88,8 +88,8 @@ function createOverlay() {
   brand.textContent = 'Skip Wait';
   const note = document.createElement('div');
   note.className = 'sw-note';
-  note.textContent =
-    'Cloudflare runs on the page below (same as the site). Complete it while the timer runs; the overlay does not block clicks.';
+  note.innerHTML =
+    '<strong>Skip Wait is handling this link.</strong> Do not use the site’s “Generate link”, “Continue”, or other steps—those are skipped. Stay on this tab; we redirect automatically when ready.';
   const status = document.createElement('div');
   status.className = 'sw-status';
   status.textContent = 'Preparing…';
@@ -112,6 +112,9 @@ function createOverlay() {
     setStatus: (t: string) => {
       status.textContent = t;
     },
+    setNote: (html: string) => {
+      note.innerHTML = html;
+    },
     setCountdown: (n: number | null) => {
       if (n === null) {
         count.style.display = countLabel.style.display = countHint.style.display = 'none';
@@ -122,8 +125,8 @@ function createOverlay() {
     },
     startRealtimeCountdown: (endTs: number) => {
       count.style.display = countLabel.style.display = countHint.style.display = 'block';
-      countLabel.textContent = 'Time until unlock (server)';
-      countHint.textContent = 'Unlock + verify in parallel';
+      countLabel.textContent = 'Host unlock timer';
+      countHint.textContent = 'Runs together with Cloudflare; no extra click here when done';
       const tick = (): void => {
         const left = endTs - Date.now();
         count.textContent = fmtRemain(left);
@@ -168,42 +171,45 @@ async function runDirectFlow(): Promise<void> {
     if (!d || d.source !== MSG_SOURCE) return;
     switch (d.phase) {
       case 'session':
-        ui.setStatus('Starting session…');
+        ui.setStatus('Connecting to the host…');
         ui.setError(null);
         break;
       case 'parallel': {
         const endTs =
           typeof d.waitEndTs === 'number' ? d.waitEndTs : Date.now() + SERVER_WAIT_MS;
-        ui.setStatus('Use Cloudflare on the page — timer runs in parallel');
+        ui.setNote(
+          '<strong>What to do:</strong> Ignore “Generate” / “Continue” on this page. Complete only the <strong>Cloudflare</strong> check—it sits in the <strong>clear area below this card</strong> (we fade the dimming so you can see it). <strong>We redirect this tab automatically</strong> when the timer and verification are done.',
+        );
+        ui.setStatus('Wait for the timer, then Cloudflare if shown—we open your link for you.');
         ui.setPageVerifyMode(true);
         ui.startRealtimeCountdown(endTs);
         break;
       }
       case 'complete':
         ui.stopRealtimeCountdown();
-        ui.setStatus('Unlocking your link…');
+        ui.setStatus('Getting your link…');
         break;
       case 'redirect':
-        ui.setStatus('Redirecting…');
+        ui.setStatus('Redirecting you now…');
         break;
       case 'turnstile_error':
       case 'turnstile_expired':
-        ui.setStatus('Verification issue — wait or refresh if this stalls.');
+        ui.setStatus('Verification glitched—wait a moment or refresh the page.');
         break;
       case 'error':
         ui.stopRealtimeCountdown();
         ui.setCountdown(null);
         ui.setCountHint(null);
-        ui.setStatus('Something went wrong');
+        ui.setStatus('Could not finish');
         ui.setError(d.message ?? 'Unknown error');
         break;
     }
   };
   window.addEventListener('message', onMessage);
   try {
-    ui.setStatus('Building browser fingerprint…');
+    ui.setStatus('Preparing…');
     const fingerprint = await xdmoviesFingerprint();
-    ui.setStatus('Connecting…');
+    ui.setStatus('Starting secure session…');
     chrome.runtime.sendMessage(
       {
         type: XDMOVIES_MAIN_WORLD_RUN,
