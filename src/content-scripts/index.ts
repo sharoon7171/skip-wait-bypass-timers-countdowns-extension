@@ -2,7 +2,6 @@ import { initXdmoviesLatestnewsAutomation } from './xdmovies-latestnews-automati
 import { initCoomeetIframeBootstrap } from './coomeet-iframe';
 import './adlink-click-verify-poll-content-script';
 import './adlinkfly-links-go-content-script';
-import './wp-safelink-redirect-content-script';
 import { initAdlinkflyTokenPayloadRedirect } from './adlinkfly-token-payload-redirect-content-script';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article-content-script';
 import { initUhdmoviesCloudContentScript } from './uhdmovies-cloud-content-script';
@@ -29,6 +28,7 @@ import { initSub2getRedirect } from './sub2get-redirect-content-script';
 import { initTeknoasianHqChain } from './teknoasian-hq-chain-content-script';
 import { initUploadrarAutomation } from './uploadrar-countdown-bypass-content-script';
 import { initUsersdriveAutomation } from './usersdrive-countdown-bypass-content-script';
+import { initWpSafelinkRedirect } from './wp-safelink-redirect-content-script';
 
 const INITS = [
   initXdmoviesLatestnewsAutomation,
@@ -58,6 +58,7 @@ const INITS = [
   initTeknoasianHqChain,
   initUploadrarAutomation,
   initUsersdriveAutomation,
+  initWpSafelinkRedirect,
 ];
 
 function currentHostname(): string {
