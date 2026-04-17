@@ -1,3 +1,7 @@
+import { isAllowedHost } from '../utils/domain-check';
+
+const HOSTS = ['cloud.unblockedgames.world'];
+
 function bytesToBase64(bytes: Uint8Array): string {
   let bin = '';
   for (let i = 0; i < bytes.length; i += 0x8000) {
@@ -12,14 +16,6 @@ function randomSlug(): string {
   return `pepe-${Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')}`;
 }
 
-function isDoubleBase64(s: string): boolean {
-  try {
-    return atob(atob(s)).length > 0;
-  } catch {
-    return false;
-  }
-}
-
 async function zlibDeflateBase64(input: string): Promise<string> {
   const stream = new Blob([input]).stream().pipeThrough(new CompressionStream('deflate'));
   return bytesToBase64(new Uint8Array(await new Response(stream).arrayBuffer()));
@@ -32,8 +28,8 @@ async function shortcut(sid: string): Promise<void> {
 }
 
 export function initUhdmoviesCloudContentScript(): void {
-  if (!window.location.search.startsWith('?sid=')) return;
+  if (!isAllowedHost(HOSTS)) return;
   const sid = new URLSearchParams(window.location.search).get('sid');
-  if (!sid || sid.length < 100 || !isDoubleBase64(sid)) return;
+  if (!sid) return;
   void shortcut(sid);
 }

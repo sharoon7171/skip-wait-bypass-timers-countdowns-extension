@@ -1,60 +1,50 @@
-type LandingPayload = { go: string; token: string; enableHumanVerification: string };
+import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
 
-function parseLandingPayload(): LandingPayload | null {
-  for (const script of document.scripts) {
-    const t = script.textContent ?? '';
-    const gm = t.match(/var\s+go\s*=\s*"([A-Za-z0-9+/=]+)"/);
-    if (!gm?.[1]) continue;
-    return {
-      go: gm[1],
-      token: t.match(/var\s+token\s*=\s*"([^"]*)"/)?.[1] ?? '',
-      enableHumanVerification: t.match(/var\s+enableHumanVerification\s*=\s*"([^"]*)"/)?.[1] ?? '',
-    };
-  }
-  return null;
-}
+const HOSTS = ['stbemuiptvcodes.com'];
 
-function applyLandingCookies(payload: LandingPayload): boolean {
-  const d = new Date();
-  d.setTime(d.getTime() + 10 * 60 * 1000);
-  const exp = d.toUTCString();
+type LandingPayload = { enableHumanVerification: string; go: string; token: string };
+
+function applyLandingCookies(payload: LandingPayload): void {
+  const exp = new Date(Date.now() + 10 * 60 * 1000).toUTCString();
   document.cookie = `wpsafelink_go=${payload.go}; expires=${exp}; path=/`;
   document.cookie = `wpsl_gr_token=${payload.token}; expires=${exp}; path=/`;
   document.cookie = `wpsl_gr_pending=1; expires=${exp}; path=/`;
   document.cookie = `wpsl_gr_content_shown=1; expires=${exp}; path=/`;
   if (payload.enableHumanVerification === 'yes') {
-    document.cookie = `enable_human_verification=${payload.enableHumanVerification}; expires=${exp}; path=/`;
+    document.cookie = `enable_human_verification=yes; expires=${exp}; path=/`;
   }
-  return document.cookie.includes('wpsafelink_go=');
 }
 
 function destinationFromGoB64(goB64: string): string | null {
   try {
     const decoded = atob(goB64);
-    if (/^https?:\/\//.test(decoded)) return decoded;
+    return /^https?:\/\//.test(decoded) ? decoded : null;
   } catch {
     return null;
+  }
+}
+
+function parseLandingPayload(): LandingPayload | null {
+  for (const script of document.scripts) {
+    const t = script.textContent ?? '';
+    const go = t.match(/var\s+go\s*=\s*"([A-Za-z0-9+/=]+)"/)?.[1];
+    if (!go) continue;
+    return {
+      enableHumanVerification: t.match(/var\s+enableHumanVerification\s*=\s*"([^"]*)"/)?.[1] ?? '',
+      go,
+      token: t.match(/var\s+token\s*=\s*"([^"]*)"/)?.[1] ?? '',
+    };
   }
   return null;
 }
 
 export function initStbemuiptvcodesWpsafelink(): void {
-  if (!new URLSearchParams(window.location.search).has('wpsafelink')) return;
-
-  const run = (): void => {
+  if (!isAllowedHost(HOSTS)) return;
+  whenDomParsed(() => {
     const payload = parseLandingPayload();
     if (!payload) return;
-    if (!applyLandingCookies(payload)) return;
+    applyLandingCookies(payload);
     const dest = destinationFromGoB64(payload.go);
     window.location.href = dest ?? `${window.location.origin}/`;
-  };
-
-  run();
-  if (document.readyState === 'loading') {
-    document.addEventListener('readystatechange', function onReady() {
-      if (document.readyState === 'loading') return;
-      document.removeEventListener('readystatechange', onReady);
-      run();
-    });
-  }
+  });
 }
