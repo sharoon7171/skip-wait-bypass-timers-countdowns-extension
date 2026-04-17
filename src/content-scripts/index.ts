@@ -20,7 +20,6 @@ import { initOnhaxpkCopy } from './onhaxpk-copy-content-script';
 import { initOnlinetoolsDirectDownload } from './onlinetools-direct-download-content-script';
 import { initPrmoviesRedirect } from './prmovies-redirect-content-script';
 import { initRomsfunDownloadInstant } from './romsfun-download-instant-content-script';
-import { initShrinkearnRedirect } from './shrinkearn-redirect-content-script';
 import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogger-content-script';
 import { initShrtflyRedirect } from './shrtfly-redirect-content-script';
 import { initStbemuiptvcodesWpsafelink } from './stbemuiptvcodes-wpsafelink-content-script';
@@ -50,7 +49,6 @@ const INITS = [
   initOnlinetoolsDirectDownload,
   initPrmoviesRedirect,
   initRomsfunDownloadInstant,
-  initShrinkearnRedirect,
   initShrinkmeThemezonMrproblogger,
   initShrtflyRedirect,
   initStbemuiptvcodesWpsafelink,

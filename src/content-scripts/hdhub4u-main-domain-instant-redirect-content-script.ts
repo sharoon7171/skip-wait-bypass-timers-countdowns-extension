@@ -1,6 +1,13 @@
 import { isAllowedHost } from '../utils/domain-check';
 
-const ALLOWED_HOSTS = ['hdhub4u.catering', 'hdhub4u.gd', 'hdhub4u.gs', 'hdhub4u.hn', 'hdhub4u.ht'];
+const ALLOWED_HOSTS = [
+  'hdhub4u.catering',
+  'hdhub4u.gd',
+  'hdhub4u.gives',
+  'hdhub4u.gs',
+  'hdhub4u.hn',
+  'hdhub4u.ht',
+];
 
 const hourlySeed = (): number => {
   const n = new Date();

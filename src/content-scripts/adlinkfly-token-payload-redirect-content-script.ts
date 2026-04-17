@@ -1,7 +1,11 @@
-import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
+import { isAllowedHost } from '../utils/domain-check';
+import { isCloudflareHumanVerificationDone } from '../utils/cloudflare-verifier';
 
 const ADLINKFLY_TOKEN_PAYLOAD_HOSTS = ['oii.la', 'tpi.li'] as const;
-const ADLINKFLY_TOKEN_PAYLOAD_DESTINATION_DELIM = '1304';
+const TOKEN_INPUT_SELECTOR = 'input[name="token"]';
+const TOKEN_HTTP_B64_PREFIX = 'aHR0c';
+
+let done = false;
 
 function padBase64(s: string): string {
   const p = s.length % 4;
@@ -9,33 +13,44 @@ function padBase64(s: string): string {
 }
 
 function destinationUrlFromAdlinkflyTokenPayload(token: string): string | null {
-  const idx = token.indexOf(ADLINKFLY_TOKEN_PAYLOAD_DESTINATION_DELIM);
+  const idx = token.indexOf(TOKEN_HTTP_B64_PREFIX);
   if (idx === -1) return null;
-  const raw = token.slice(idx + ADLINKFLY_TOKEN_PAYLOAD_DESTINATION_DELIM.length).trim();
-  if (!raw) return null;
-  const normalized = raw.replace(/-/g, '+').replace(/_/g, '/');
+  const normalized = token.slice(idx).replace(/-/g, '+').replace(/_/g, '/');
   try {
     const bin = atob(padBase64(normalized));
-    const out = new TextDecoder('utf-8').decode(
+    const decoded = new TextDecoder('utf-8').decode(
       Uint8Array.from(bin, (c) => c.charCodeAt(0)),
     );
-    const t = out.trim();
-    if (t.startsWith('http://') || t.startsWith('https://')) return t;
+    const match = decoded.match(/https?:\/\/[^\s\x00-\x1f"']+/);
+    return match ? match[0].trim() : null;
   } catch {
     return null;
   }
-  return null;
 }
 
-function runAdlinkflyTokenPayloadRedirect(): void {
-  const input = document.querySelector<HTMLInputElement>('input[name="token"]');
-  const token = input?.value?.trim();
+function tryRedirect(): void {
+  if (done) return;
+  const input = document.querySelector<HTMLInputElement>(TOKEN_INPUT_SELECTOR);
+  if (!input || !isCloudflareHumanVerificationDone(input.form ?? undefined)) return;
+  const token = input.value?.trim();
   if (!token) return;
   const url = destinationUrlFromAdlinkflyTokenPayload(token);
-  if (url) window.location.replace(url);
+  if (!url) return;
+  done = true;
+  window.location.replace(url);
+}
+
+function tick(): void {
+  tryRedirect();
+  if (!done) requestAnimationFrame(tick);
 }
 
 export function initAdlinkflyTokenPayloadRedirect(): void {
   if (!isAllowedHost(ADLINKFLY_TOKEN_PAYLOAD_HOSTS)) return;
-  whenDomParsed(runAdlinkflyTokenPayloadRedirect);
+  const run = () => requestAnimationFrame(tick);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
+  }
 }
