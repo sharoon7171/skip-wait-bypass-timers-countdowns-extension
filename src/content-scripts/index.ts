@@ -1,5 +1,6 @@
 import { bootstrapRemoteDomains } from '../utils/remote-domains';
 import { initXdmoviesDownloadLink } from './xdmovies-download-link';
+import { initXdmoviesLandingRedirect } from './xdmovies-landing-redirect';
 import {
   initCoomeetIframeBootstrap,
   isOnCoomeetIframeHost,
@@ -14,7 +15,7 @@ import { initClipiRedirect } from './clipi-redirect';
 import { initCookiesceoCopy } from './cookiesceo-copy';
 import { initFastdlZipRedirect } from './fastdl-zip-redirect';
 import { initFclcRedirect } from './fclc-redirect';
-import { initHdhub4uMainDomainRedirect } from './hdhub4u-main-domain-instant-redirect';
+import { initHdhub4uLandingRedirect } from './hdhub4u-landing-redirect';
 import { initHdhub4uTimerBypass } from './hdhub4u-timer-bypass';
 import { initHubcdnRedirect } from './hubcdn-redirect';
 import { initLinkjustTimerChainBypass } from './linkjust-timer-chain-bypass';
@@ -36,6 +37,7 @@ import { initUsersdriveAutomation } from './usersdrive-countdown-bypass';
 import { initWpSafelinkRedirect } from './wp-safelink-redirect';
 
 const INITS = [
+  initXdmoviesLandingRedirect,
   initXdmoviesDownloadLink,
   initLinkjustTimerChainBypass,
   initMoviesModContentScript,
@@ -46,7 +48,7 @@ const INITS = [
   initCookiesceoCopy,
   initFastdlZipRedirect,
   initFclcRedirect,
-  initHdhub4uMainDomainRedirect,
+  initHdhub4uLandingRedirect,
   initHdhub4uTimerBypass,
   initHubcdnRedirect,
   initHubcloudDrive,

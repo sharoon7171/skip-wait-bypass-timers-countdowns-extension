@@ -39,77 +39,85 @@ export function runXdmoviesMainWorldFlow(P: XdmoviesMainWorldPayload): void {
 
   void (async () => {
     try {
-      post('session');
-      const sessRes = await fetch('/api/session', {
+      const waitEndTs = Date.now() + P.waitMs;
+      post('parallel', { waitEndTs });
+
+      const sessionPromise = fetch('/api/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({ code: P.code, fingerprint: P.fingerprint }),
-      });
-      const sess = (await sessRes.json()) as { sessionId: string; token: string };
+      }).then((r) => r.json() as Promise<{ sessionId: string; token: string }>);
 
-      const ioFn = await trapGlobal<IoFactory>('io', (v) => typeof v === 'function');
+      const ioPromise = trapGlobal<IoFactory>('io', (v) => typeof v === 'function');
 
-      await new Promise<void>((resolve, reject) => {
-        const s = ioFn(undefined, { transports: ['websocket'] });
-        setInterval(() => {
-          if (s.connected) s.emit('heartbeat');
-        }, 100);
-        s.on('connect', () => {
-          s.emit('bind', sess.token);
-          s.emit('visibility', 'visible');
-        });
-        s.on('bound', () => resolve());
-        s.on('error', (e: unknown) => reject(e instanceof Error ? e : new Error(String(e))));
-      });
-
-      const waitEndTs = Date.now() + P.waitMs;
-      post('parallel', { waitEndTs });
-
-      const box = document.getElementById('turnstileContainer');
-      box?.classList.remove('hidden');
-      const el =
-        (document.getElementById('turnstileWidget') as HTMLElement | null) ??
-        (box ?? document.body).appendChild(
-          Object.assign(document.createElement('div'), { id: 'turnstileWidget' }),
-        );
-      el.scrollIntoView({ block: 'center', behavior: 'instant' });
-
-      const ts = await trapGlobal<Turnstile>('turnstile', (v) => typeof v?.render === 'function');
-      const readExistingToken = (): string | null => {
-        const input = document.querySelector<HTMLInputElement>('input[name="cf-turnstile-response"]');
-        const value = input?.value ?? '';
-        return value.length > 50 ? value : null;
-      };
-      const tokenPromise = new Promise<string>((resolve) => {
-        let pollId: number | undefined;
-        const finish = (token: string): void => {
-          if (pollId !== undefined) clearInterval(pollId);
-          resolve(token);
-        };
-        const existing = readExistingToken();
-        if (existing) {
-          finish(existing);
-          return;
-        }
-        try {
-          ts.render(el, {
-            sitekey: P.sitekey,
-            callback: finish,
-            'error-callback': () => post('turnstile_error'),
-            'expired-callback': () => post('turnstile_expired'),
+      const bindPromise = (async () => {
+        const [sess, ioFn] = await Promise.all([sessionPromise, ioPromise]);
+        await new Promise<void>((resolve, reject) => {
+          const s = ioFn(undefined, { transports: ['websocket'] });
+          setInterval(() => {
+            if (s.connected) s.emit('heartbeat');
+          }, 100);
+          s.on('connect', () => {
+            s.emit('bind', sess.token);
+            s.emit('visibility', 'visible');
           });
-        } catch {}
-        pollId = window.setInterval(() => {
-          const v = readExistingToken();
-          if (v) finish(v);
-        }, 250);
+          s.on('bound', () => resolve());
+          s.on('error', (e: unknown) => reject(e instanceof Error ? e : new Error(String(e))));
+        });
+        return sess;
+      })();
+
+      const tokenPromise = (async () => {
+        const box = document.getElementById('turnstileContainer');
+        box?.classList.remove('hidden');
+        const el =
+          (document.getElementById('turnstileWidget') as HTMLElement | null) ??
+          (box ?? document.body).appendChild(
+            Object.assign(document.createElement('div'), { id: 'turnstileWidget' }),
+          );
+        el.scrollIntoView({ block: 'center', behavior: 'instant' });
+        const ts = await trapGlobal<Turnstile>('turnstile', (v) => typeof v?.render === 'function');
+        const readExistingToken = (): string | null => {
+          const input = document.querySelector<HTMLInputElement>('input[name="cf-turnstile-response"]');
+          const value = input?.value ?? '';
+          return value.length > 50 ? value : null;
+        };
+        return new Promise<string>((resolve) => {
+          let pollId: number | undefined;
+          const finish = (token: string): void => {
+            if (pollId !== undefined) clearInterval(pollId);
+            resolve(token);
+          };
+          const existing = readExistingToken();
+          if (existing) {
+            finish(existing);
+            return;
+          }
+          try {
+            ts.render(el, {
+              sitekey: P.sitekey,
+              callback: finish,
+              'error-callback': () => post('turnstile_error'),
+              'expired-callback': () => post('turnstile_expired'),
+            });
+          } catch {}
+          pollId = window.setInterval(() => {
+            const v = readExistingToken();
+            if (v) finish(v);
+          }, 250);
+        });
+      })();
+
+      const serverReady = new Promise<void>((r) => {
+        const remain = waitEndTs - Date.now();
+        if (remain <= 0) r();
+        else setTimeout(r, remain);
       });
 
-      const remain = waitEndTs - Date.now();
-      const serverReady =
-        remain > 0 ? new Promise<void>((r) => setTimeout(r, remain)) : Promise.resolve();
-      const [tok] = await Promise.all([tokenPromise, serverReady]);
+      const [sess, tok] = await Promise.all([bindPromise, tokenPromise, serverReady]).then(
+        ([s, t]) => [s, t] as const,
+      );
 
       post('complete');
       const cr = await fetch('/api/session/complete', {
