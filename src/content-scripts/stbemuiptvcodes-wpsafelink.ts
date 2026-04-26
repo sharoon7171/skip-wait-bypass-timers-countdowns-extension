@@ -1,6 +1,7 @@
 import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 
-const HOSTS = ['stbemuiptvcodes.com'];
+const KEY = 'stbemuiptvcodes-wpsafelink';
 
 type LandingPayload = { enableHumanVerification: string; go: string; token: string };
 
@@ -39,7 +40,7 @@ function parseLandingPayload(): LandingPayload | null {
 }
 
 export function initStbemuiptvcodesWpsafelink(): void {
-  if (!isAllowedHost(HOSTS)) return;
+  if (!isAllowedHost(getHostsByKey(KEY))) return;
   whenDomParsed(() => {
     const payload = parseLandingPayload();
     if (!payload) return;

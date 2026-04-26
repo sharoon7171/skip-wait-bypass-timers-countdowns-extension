@@ -1,13 +1,7 @@
 import { isAllowedHost } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 
-const ALLOWED_HOSTS = [
-  'hdhub4u.catering',
-  'hdhub4u.gd',
-  'hdhub4u.gives',
-  'hdhub4u.gs',
-  'hdhub4u.hn',
-  'hdhub4u.ht',
-];
+const KEY = 'hdhub4u-main-domain';
 
 const hourlySeed = (): number => {
   const n = new Date();
@@ -15,7 +9,7 @@ const hourlySeed = (): number => {
 };
 
 export function initHdhub4uMainDomainRedirect(): void {
-  if (!isAllowedHost(ALLOWED_HOSTS)) return;
+  if (!isAllowedHost(getHostsByKey(KEY))) return;
   fetch(`https://cdn.hub4u.cloud/host/?v=${hourlySeed()}`)
     .then((r) => (r.ok ? r.json() : null))
     .then((data: { c?: string } | null) => {

@@ -1,7 +1,8 @@
 import { isAllowedHost } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 import { SKIPWAIT_CARD_STYLES } from '../utils/skipwait-card-styles';
 
-const ALLOWED_HOSTS = ['cookiesceo.com'];
+const KEY = 'cookiesceo-copy';
 const CARD_ID = 'skipwait-cookiesceo-card';
 const SESSION_PASTE_RE = /session_paste\s+([A-Za-z0-9+/=]+)/;
 const DOWNLOAD_RE = /["']([^"']*-download)\/?"?["']/;
@@ -86,7 +87,7 @@ async function run(): Promise<void> {
 }
 
 export function initCookiesceoCopy(): void {
-  if (!isAllowedHost(ALLOWED_HOSTS)) return;
+  if (!isAllowedHost(getHostsByKey(KEY))) return;
   const exec = (): void => { run(); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', exec);
   else exec();

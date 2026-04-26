@@ -21,27 +21,26 @@ function installAcceleratedTimers(): void {
   } as typeof setInterval;
 }
 
-function runCoomeetMainWorldTimers(): void {
-  try {
-    if (new URL(window.location.href).hostname !== HOST) return;
-  } catch {
-    return;
-  }
+export function runCoomeetMainWorldAccelerator(): void {
   const w = window as unknown as Record<string, boolean | undefined>;
   if (w[FLAG]) return;
   w[FLAG] = true;
   installAcceleratedTimers();
 }
 
-export function initCoomeetIframeBootstrap(): void {
+export function isOnCoomeetIframeHost(): boolean {
   try {
-    if (new URL(window.location.href).hostname !== HOST) return;
+    return new URL(window.location.href).hostname === HOST;
   } catch {
-    return;
+    return false;
   }
+}
+
+export function initCoomeetIframeBootstrap(): void {
+  if (!isOnCoomeetIframeHost()) return;
   if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
     chrome.runtime.sendMessage({ type: 'SKIP_WAIT_COOMEET_MAIN' }).catch(() => {});
     return;
   }
-  runCoomeetMainWorldTimers();
+  runCoomeetMainWorldAccelerator();
 }

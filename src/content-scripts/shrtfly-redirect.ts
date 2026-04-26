@@ -1,6 +1,7 @@
 import { isAllowedHost } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 
-const HOSTS = ['shrtslug.biz'];
+const KEY = 'shrtfly-redirect';
 const VERIFY_SELECTOR = 'form[action*="api-endpoint/verify"]';
 
 let done = false;
@@ -31,6 +32,6 @@ function run(): void {
 }
 
 export function initShrtflyRedirect(): void {
-  if (!isAllowedHost(HOSTS)) return;
+  if (!isAllowedHost(getHostsByKey(KEY))) return;
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', run) : run();
 }

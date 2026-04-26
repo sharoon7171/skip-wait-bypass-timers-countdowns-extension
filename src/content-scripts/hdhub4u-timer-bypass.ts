@@ -1,13 +1,7 @@
 import { isAllowedHost } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 
-const ALLOWED_HOSTS = [
-  'cryptoinsights.site',
-  'cryptonewz.one',
-  'gadgetsweb.xyz',
-  'greenmountmotors.com',
-  'inventoryidea.com',
-  'taazabull24.com',
-];
+const KEY = 'hdhub4u-timer-bypass';
 
 type StrProto = string & { ca(): string; de(): string; en(): string };
 
@@ -51,7 +45,7 @@ function extractFinalUrl(): string | null {
 }
 
 export function initHdhub4uTimerBypass(): void {
-  if (!isAllowedHost(ALLOWED_HOSTS)) return;
+  if (!isAllowedHost(getHostsByKey(KEY))) return;
   extendString();
   const check = (): void => {
     const url = extractFinalUrl();

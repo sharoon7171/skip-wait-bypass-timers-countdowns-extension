@@ -1,6 +1,7 @@
 import { isAllowedHost } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 
-const HOSTS = ['shrinkme.click', 'themezon.net', 'en.mrproblogger.com'];
+const KEY = 'shrinkme-themezon-mrproblogger';
 const THEMEZON_LINK = 'https://themezon.net/link.php?link=';
 const MRPRO_ORIGIN = 'https://en.mrproblogger.com/';
 
@@ -35,7 +36,7 @@ function redirectWhen(
 }
 
 export function initShrinkmeThemezonMrproblogger(): void {
-  if (!isAllowedHost(HOSTS)) return;
+  if (!isAllowedHost(getHostsByKey(KEY))) return;
   const host = new URL(window.location.href).hostname.toLowerCase();
 
   if (host === 'shrinkme.click') {

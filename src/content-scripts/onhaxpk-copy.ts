@@ -1,7 +1,8 @@
 import { isAllowedHost } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 import { SKIPWAIT_CARD_STYLES } from '../utils/skipwait-card-styles';
 
-const ALLOWED_HOSTS = ['onhaxpk.net'];
+const KEY = 'onhaxpk-copy';
 const CARD_ID = 'skipwait-onhax-card';
 const COOKIE_EDITOR_RE = /<xmp>\[\s*([\s\S]*?)<\/xmp>/;
 const SESSION_PASTE_RE = /session_paste\s+([A-Za-z0-9+/=]+)/;
@@ -79,7 +80,7 @@ function run(): void {
 }
 
 export function initOnhaxpkCopy(): void {
-  if (!isAllowedHost(ALLOWED_HOSTS)) return;
+  if (!isAllowedHost(getHostsByKey(KEY))) return;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
   else run();
 }

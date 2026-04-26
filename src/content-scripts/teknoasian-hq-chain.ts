@@ -1,6 +1,7 @@
 import { isAllowedHost } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 
-const ALLOWED_HOSTS = ['teknoasian.com'] as const;
+const KEY = 'teknoasian-hq-chain';
 const LL_PAYLOAD_RE = /var LLPayload = '([^']+)'/;
 const MICRO_TRIES = 128;
 const OBS_MS = 8000;
@@ -115,7 +116,7 @@ function chainArticle(): void {
 }
 
 export function initTeknoasianHqChain(): void {
-  if (!isAllowedHost(ALLOWED_HOSTS)) return;
+  if (!isAllowedHost(getHostsByKey(KEY))) return;
   try {
     const path = location.pathname.replace(/\/+$/, '') || '/';
     if (path !== '/') chainArticle();

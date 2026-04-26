@@ -1,3 +1,8 @@
+import { hostnameMatches } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
+
+const KEY = 'linkjust';
+
 const OBS_HOP: MutationObserverInit = {
   attributeFilter: ['href', 'style', 'class'],
   attributes: true,
@@ -17,8 +22,7 @@ const WP_TIMER_SEL =
   '#next-timer-btn,#linkjust-timer,#timer_seconds,#mdtimer,#linkjust-progress-marker';
 
 function isLinkjustHost(hostname: string): boolean {
-  const h = hostname.toLowerCase();
-  return h === 'linkjust.com' || h.endsWith('.linkjust.com');
+  return hostnameMatches(hostname, getHostsByKey(KEY));
 }
 
 function isTimerChainTemplate(doc: Document): boolean {

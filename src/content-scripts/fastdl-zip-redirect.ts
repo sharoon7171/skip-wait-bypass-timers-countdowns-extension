@@ -1,9 +1,10 @@
 import { isAllowedHost } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 
-const HOSTS = ['fastdl.zip'] as const;
+const KEY = 'fastdl-zip-redirect';
 
 export function initFastdlZipRedirect(): void {
-  if (!isAllowedHost(HOSTS)) return;
+  if (!isAllowedHost(getHostsByKey(KEY))) return;
   const path = window.location.pathname.toLowerCase();
   if (!path.endsWith('/dl.php')) return;
   let raw: string | null = null;

@@ -1,6 +1,7 @@
 import { isAllowedHost } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 
-const ALLOWED_HOSTS = ['latestnewsonline.sbs'] as const;
+const KEY = 'xdmovies-download-link';
 const MSG_SOURCE = 'skip-wait-xdmovies';
 const MSG_VISIBILITY = 'INJECT_VISIBILITY_SPOOF';
 const OVERLAY_ID = 'skip-wait-xdmovies-overlay';
@@ -118,7 +119,7 @@ function createOverlay() {
   };
 }
 
-async function runDirectFlow(code: string): Promise<void> {
+async function runDownloadLinkFlow(code: string): Promise<void> {
   const ui = createOverlay();
   document.documentElement.appendChild(ui.root);
   window.addEventListener('message', (ev: MessageEvent): void => {
@@ -164,10 +165,10 @@ async function runDirectFlow(code: string): Promise<void> {
   });
 }
 
-export function initXdmoviesLatestnewsAutomation(): void {
-  if (window !== window.top || !isAllowedHost(ALLOWED_HOSTS)) return;
+export function initXdmoviesDownloadLink(): void {
+  if (window !== window.top || !isAllowedHost(getHostsByKey(KEY))) return;
   const code = location.pathname.match(PATH)?.[1];
   if (!code) return;
   chrome.runtime.sendMessage({ type: MSG_VISIBILITY });
-  void runDirectFlow(code);
+  void runDownloadLinkFlow(code);
 }

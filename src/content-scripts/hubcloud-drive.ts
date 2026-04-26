@@ -1,6 +1,7 @@
 import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 
-const ALLOWED_HOSTS = ['shikshakdaak.com', 'vcloud.zip'];
+const KEY = 'hubcloud-drive';
 
 const VCLOUD_ROOT = 'vcloud.zip';
 const VCLOUD_FILE_ID_MIN_LEN = 10;
@@ -76,7 +77,7 @@ function isHubcloudSharePath(pathname: string, hostname: string): boolean {
 }
 
 export function initHubcloudDrive(): void {
-  if (!isAllowedHost(ALLOWED_HOSTS)) return;
+  if (!isAllowedHost(getHostsByKey(KEY))) return;
   let pathname: string;
   let hostname: string;
   try {

@@ -1,15 +1,8 @@
-const ALLOWED_HOSTNAMES: readonly string[] = ['episodes.modpro.blog', 'links.modpro.blog'];
+import { isAllowedHost } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 
+const KEY = 'movies-mod';
 const STYLE_ID = 'skipwait-movies-mod-timed-content';
-
-function isAllowedMoviesModHost(): boolean {
-  try {
-    const h = new URL(window.location.href).hostname.toLowerCase();
-    return ALLOWED_HOSTNAMES.includes(h);
-  } catch {
-    return false;
-  }
-}
 
 function injectBypassStyle(): void {
   if (document.getElementById(STYLE_ID)) return;
@@ -21,6 +14,6 @@ function injectBypassStyle(): void {
 }
 
 export function initMoviesModContentScript(): void {
-  if (!isAllowedMoviesModHost()) return;
+  if (!isAllowedHost(getHostsByKey(KEY))) return;
   injectBypassStyle();
 }

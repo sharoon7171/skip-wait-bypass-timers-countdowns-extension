@@ -76,13 +76,34 @@ export function runXdmoviesMainWorldFlow(P: XdmoviesMainWorldPayload): void {
       el.scrollIntoView({ block: 'center', behavior: 'instant' });
 
       const ts = await trapGlobal<Turnstile>('turnstile', (v) => typeof v?.render === 'function');
+      const readExistingToken = (): string | null => {
+        const input = document.querySelector<HTMLInputElement>('input[name="cf-turnstile-response"]');
+        const value = input?.value ?? '';
+        return value.length > 50 ? value : null;
+      };
       const tokenPromise = new Promise<string>((resolve) => {
-        ts.render(el, {
-          sitekey: P.sitekey,
-          callback: resolve,
-          'error-callback': () => post('turnstile_error'),
-          'expired-callback': () => post('turnstile_expired'),
-        });
+        let pollId: number | undefined;
+        const finish = (token: string): void => {
+          if (pollId !== undefined) clearInterval(pollId);
+          resolve(token);
+        };
+        const existing = readExistingToken();
+        if (existing) {
+          finish(existing);
+          return;
+        }
+        try {
+          ts.render(el, {
+            sitekey: P.sitekey,
+            callback: finish,
+            'error-callback': () => post('turnstile_error'),
+            'expired-callback': () => post('turnstile_expired'),
+          });
+        } catch {}
+        pollId = window.setInterval(() => {
+          const v = readExistingToken();
+          if (v) finish(v);
+        }, 250);
       });
 
       const remain = waitEndTs - Date.now();

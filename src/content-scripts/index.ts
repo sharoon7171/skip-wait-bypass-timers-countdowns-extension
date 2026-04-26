@@ -1,36 +1,42 @@
-import { initXdmoviesLatestnewsAutomation } from './xdmovies-latestnews-automation';
-import { initCoomeetIframeBootstrap } from './coomeet-iframe';
-import './adlink-click-verify-poll-content-script';
-import './adlinkfly-links-go-content-script';
-import { initAdlinkflyTokenPayloadRedirect } from './adlinkfly-token-payload-redirect-content-script';
-import { initBitcotasksReadArticle } from './bitcotasks-read-article-content-script';
-import { initUhdmoviesCloudContentScript } from './uhdmovies-cloud-content-script';
-import { initClipiRedirect } from './clipi-redirect-content-script';
-import { initCookiesceoCopy } from './cookiesceo-copy-content-script';
-import { initFastdlZipRedirect } from './fastdl-zip-redirect-content-script';
-import { initFclcRedirect } from './fclc-redirect-content-script';
-import { initHdhub4uMainDomainRedirect } from './hdhub4u-main-domain-instant-redirect-content-script';
-import { initHdhub4uTimerBypass } from './hdhub4u-timer-bypass-content-script';
-import { initHubcdnRedirect } from './hubcdn-redirect-content-script';
-import { initLinkjustTimerChainBypass } from './linkjust-timer-chain-bypass-content-script';
-import { initMoviesModContentScript } from './movies-mod-content-script';
-import { initHubcloudDrive } from './hubcloud-drive-content-script';
-import { initMultiup } from './multiup-content-script';
-import { initOnhaxpkCopy } from './onhaxpk-copy-content-script';
-import { initOnlinetoolsDirectDownload } from './onlinetools-direct-download-content-script';
-import { initPrmoviesRedirect } from './prmovies-redirect-content-script';
-import { initRomsfunDownloadInstant } from './romsfun-download-instant-content-script';
-import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogger-content-script';
-import { initShrtflyRedirect } from './shrtfly-redirect-content-script';
-import { initStbemuiptvcodesWpsafelink } from './stbemuiptvcodes-wpsafelink-content-script';
-import { initSub2getRedirect } from './sub2get-redirect-content-script';
-import { initTeknoasianHqChain } from './teknoasian-hq-chain-content-script';
-import { initUploadrarAutomation } from './uploadrar-countdown-bypass-content-script';
-import { initUsersdriveAutomation } from './usersdrive-countdown-bypass-content-script';
-import { initWpSafelinkRedirect } from './wp-safelink-redirect-content-script';
+import { bootstrapRemoteDomains } from '../utils/remote-domains';
+import { initXdmoviesDownloadLink } from './xdmovies-download-link';
+import {
+  initCoomeetIframeBootstrap,
+  isOnCoomeetIframeHost,
+  runCoomeetMainWorldAccelerator,
+} from './coomeet-iframe';
+import './adlink-click-verify-poll';
+import './adlinkfly-links-go';
+import { initAdlinkflyTokenPayloadRedirect } from './adlinkfly-token-payload-redirect';
+import { initBitcotasksReadArticle } from './bitcotasks-read-article';
+import { initUhdmoviesCloudContentScript } from './uhdmovies-cloud';
+import { initClipiRedirect } from './clipi-redirect';
+import { initCookiesceoCopy } from './cookiesceo-copy';
+import { initFastdlZipRedirect } from './fastdl-zip-redirect';
+import { initFclcRedirect } from './fclc-redirect';
+import { initHdhub4uMainDomainRedirect } from './hdhub4u-main-domain-instant-redirect';
+import { initHdhub4uTimerBypass } from './hdhub4u-timer-bypass';
+import { initHubcdnRedirect } from './hubcdn-redirect';
+import { initLinkjustTimerChainBypass } from './linkjust-timer-chain-bypass';
+import { initMoviesModContentScript } from './movies-mod';
+import { initHubcloudDrive } from './hubcloud-drive';
+import { initMultiup } from './multiup';
+import { initOlamoviesLinkGenerator } from './olamovies-link-generator';
+import { initOnhaxpkCopy } from './onhaxpk-copy';
+import { initOnlinetoolsDirectDownload } from './onlinetools-direct-download';
+import { initPrmoviesRedirect } from './prmovies-redirect';
+import { initRomsfunDownloadInstant } from './romsfun-download-instant';
+import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogger';
+import { initShrtflyRedirect } from './shrtfly-redirect';
+import { initStbemuiptvcodesWpsafelink } from './stbemuiptvcodes-wpsafelink';
+import { initSub2getRedirect } from './sub2get-redirect';
+import { initTeknoasianHqChain } from './teknoasian-hq-chain';
+import { initUploadrarAutomation } from './uploadrar-countdown-bypass';
+import { initUsersdriveAutomation } from './usersdrive-countdown-bypass';
+import { initWpSafelinkRedirect } from './wp-safelink-redirect';
 
 const INITS = [
-  initXdmoviesLatestnewsAutomation,
+  initXdmoviesDownloadLink,
   initLinkjustTimerChainBypass,
   initMoviesModContentScript,
   initUhdmoviesCloudContentScript,
@@ -45,6 +51,7 @@ const INITS = [
   initHubcdnRedirect,
   initHubcloudDrive,
   initMultiup,
+  initOlamoviesLinkGenerator,
   initOnhaxpkCopy,
   initOnlinetoolsDirectDownload,
   initPrmoviesRedirect,
@@ -59,20 +66,18 @@ const INITS = [
   initWpSafelinkRedirect,
 ];
 
-function currentHostname(): string {
-  try {
-    return new URL(window.location.href).hostname;
-  } catch {
-    return '';
-  }
-}
+const isExtensionContext = typeof chrome !== 'undefined' && !!chrome.runtime?.id;
 
-if (currentHostname() === 'iframe.coomeet.com') {
+if (!isExtensionContext) {
+  runCoomeetMainWorldAccelerator();
+} else if (isOnCoomeetIframeHost()) {
   initCoomeetIframeBootstrap();
 } else if (window === window.top) {
-  for (const init of INITS) {
-    try {
-      init();
-    } catch {}
-  }
+  void bootstrapRemoteDomains().then(() => {
+    for (const init of INITS) {
+      try {
+        init();
+      } catch {}
+    }
+  });
 }

@@ -1,14 +1,8 @@
 import { isAllowedHost } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 import { SKIPWAIT_CARD_STYLES } from '../utils/skipwait-card-styles';
 
-const ALLOWED_HOSTS = [
-  'onlinegiftools.com',
-  'onlinejpgtools.com',
-  'onlinepngtools.com',
-  'onlinestringtools.com',
-  'onlinetexttools.com',
-  'onlinetools.com',
-];
+const KEY = 'onlinetools-direct-download';
 const CARD_ID = 'skipwait-onlinetools-card';
 const DATA_HIJACKED = 'data-skipwait-hijacked';
 const SELECTORS = {
@@ -134,7 +128,7 @@ function run(): void {
 }
 
 export function initOnlinetoolsDirectDownload(): void {
-  if (!isAllowedHost(ALLOWED_HOSTS)) return;
+  if (!isAllowedHost(getHostsByKey(KEY))) return;
   const check = (): void => {
     const toolOutput = document.querySelector(SELECTORS.toolOutput);
     if (!toolOutput) return;

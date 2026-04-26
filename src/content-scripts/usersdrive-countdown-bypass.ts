@@ -1,8 +1,9 @@
 import { isAllowedHost } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 import { isCloudflareHumanVerificationDone } from '../utils/cloudflare-verifier';
 import { SKIPWAIT_CARD_STYLES } from '../utils/skipwait-card-styles';
 
-const HOSTS: readonly string[] = ['usersdrive.com'];
+const KEY = 'usersdrive-countdown-bypass';
 const FORM_SELECTOR = 'form .cf-turnstile';
 const DIRECT_LINK_RE = /href\s*=\s*["']\s*(https?:\/\/[^"'\s]+\/[^"'\s]*\.[A-Za-z0-9]+)["'][^>]*>\s*(?:<[^>]*>\s*)*Click\s*To\s*Download/i;
 const Z = { backdrop: '2147483640', card: '2147483645', widget: '2147483646' };
@@ -105,6 +106,6 @@ async function run(): Promise<void> {
 }
 
 export function initUsersdriveAutomation(): void {
-  if (!isAllowedHost(HOSTS)) return;
+  if (!isAllowedHost(getHostsByKey(KEY))) return;
   void run();
 }

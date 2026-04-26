@@ -1,3 +1,7 @@
+import { hostnameMatches } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
+
+const KEY = 'bitcotasks-read-article';
 const READ_ARTICLE = '/read-article/';
 const HREF_PATTERN = /location\.href\s*=\s*['"](https?:\/\/[^'"]+)['"]/gi;
 const BLOCKED_PATTERN = /bitcotasks\.com\/detected\.html/i;
@@ -5,8 +9,7 @@ const BLOCKED_PATTERN = /bitcotasks\.com\/detected\.html/i;
 function isBitcotasksReadArticlePage(): boolean {
   try {
     const { hostname, pathname } = new URL(window.location.href);
-    const normalizedHost = hostname.toLowerCase();
-    return (normalizedHost === 'bitcotasks.com' || normalizedHost.endsWith('.bitcotasks.com')) && pathname.includes(READ_ARTICLE);
+    return hostnameMatches(hostname, getHostsByKey(KEY)) && pathname.includes(READ_ARTICLE);
   } catch {
     return false;
   }

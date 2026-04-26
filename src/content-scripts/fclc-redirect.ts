@@ -1,9 +1,10 @@
 import { isAllowedHost } from '../utils/domain-check';
+import { getHostsByKey } from '../utils/remote-domains';
 import { isCaptchaVerified } from '../utils/captcha-verifier';
 import { isCloudflareHumanVerificationDone } from '../utils/cloudflare-verifier';
 
 const CAPTCHA_IN_FORM = '[name="h-captcha-response"], [name="g-recaptcha-response"]';
-const HOSTS = ['fc-lc.xyz', 'fc.lc', 'oii.io'];
+const KEY = 'fclc-redirect';
 const LINK_VIEW = '#link-view';
 const MSG_FCLC_ALERT_SUPPRESS = 'FCLC_ALERT_SUPPRESS';
 const SUBMIT_BTN = '#submitBtn';
@@ -88,7 +89,7 @@ function run(): void {
 }
 
 export function initFclcRedirect(): void {
-  if (!isAllowedHost(HOSTS)) return;
+  if (!isAllowedHost(getHostsByKey(KEY))) return;
   chrome.runtime.sendMessage({ type: MSG_FCLC_ALERT_SUPPRESS }).catch(() => {});
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
   else run();
