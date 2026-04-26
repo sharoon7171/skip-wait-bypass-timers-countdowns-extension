@@ -55,7 +55,7 @@ function resolveHubcloudRedirectTarget(): string | undefined {
 
 function isVcloudFileIdSegment(seg: string): boolean {
   if (seg.length < VCLOUD_FILE_ID_MIN_LEN || seg.length > VCLOUD_FILE_ID_MAX_LEN) return false;
-  return /^[a-z0-9]+$/i.test(seg);
+  return /^[a-z0-9][a-z0-9-]*[a-z0-9]$/i.test(seg);
 }
 
 function isVcloudFilePath(pathname: string): boolean {
