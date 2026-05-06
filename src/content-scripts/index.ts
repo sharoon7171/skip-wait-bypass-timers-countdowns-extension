@@ -1,4 +1,5 @@
 import { bootstrapRemoteDomains } from '../utils/remote-domains';
+import { initFourDownloadDirectLinks } from './4download-direct-links';
 import { initXdmoviesDownloadLink } from './xdmovies-download-link';
 import { initXdmoviesLandingRedirect } from './xdmovies-landing-redirect';
 import {
@@ -18,6 +19,7 @@ import { initFclcRedirect } from './fclc-redirect';
 import { initHdhub4uLandingRedirect } from './hdhub4u-landing-redirect';
 import { initHdhub4uTimerBypass } from './hdhub4u-timer-bypass';
 import { initHubcdnRedirect } from './hubcdn-redirect';
+import { initKitokolaDlGetBypass } from './kitokola-dl-get-bypass';
 import { initLinkjustTimerChainBypass } from './linkjust-timer-chain-bypass';
 import { initMoviesModContentScript } from './movies-mod';
 import { initHubcloudDrive } from './hubcloud-drive';
@@ -32,11 +34,13 @@ import { initShrtflyRedirect } from './shrtfly-redirect';
 import { initStbemuiptvcodesWpsafelink } from './stbemuiptvcodes-wpsafelink';
 import { initSub2getRedirect } from './sub2get-redirect';
 import { initTeknoasianHqChain } from './teknoasian-hq-chain';
+import { initTinurlzSoftinfoFragment } from './tinurlz-softinfo-fragment';
 import { initUploadrarAutomation } from './uploadrar-countdown-bypass';
 import { initUsersdriveAutomation } from './usersdrive-countdown-bypass';
 import { initWpSafelinkRedirect } from './wp-safelink-redirect';
 
 const INITS = [
+  initFourDownloadDirectLinks,
   initXdmoviesLandingRedirect,
   initXdmoviesDownloadLink,
   initLinkjustTimerChainBypass,
@@ -52,6 +56,7 @@ const INITS = [
   initHdhub4uTimerBypass,
   initHubcdnRedirect,
   initHubcloudDrive,
+  initKitokolaDlGetBypass,
   initMultiup,
   initOlamoviesLinkGenerator,
   initOnhaxpkCopy,
@@ -63,6 +68,7 @@ const INITS = [
   initStbemuiptvcodesWpsafelink,
   initSub2getRedirect,
   initTeknoasianHqChain,
+  initTinurlzSoftinfoFragment,
   initUploadrarAutomation,
   initUsersdriveAutomation,
   initWpSafelinkRedirect,

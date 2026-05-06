@@ -1,6 +1,6 @@
 {
   "name": "skip-wait",
-  "version": "1.4.25",
+  "version": "1.4.26",
   "description": "Bypass countdown timers and skip waiting pages. Instant access on link shorteners and file hosts - no wait, one click. Works on any site with wait timers.",
   "type": "module",
   "scripts": {
@@ -11,20 +11,20 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
-    "playwright": "^1.49.0",
-    "@tailwindcss/vite": "^4.2.2",
-    "@types/chrome": "^0.1.38",
-    "@types/node": "^22.10.0",
+    "@tailwindcss/vite": "^4.2.4",
+    "@types/chrome": "^0.1.40",
+    "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
-    "tailwindcss": "^4.2.2",
-    "terser": "^5.46.1",
-    "typescript": "^5.9.3",
-    "vite": "^8.0.0"
+    "playwright": "^1.59.1",
+    "tailwindcss": "^4.2.4",
+    "terser": "^5.46.2",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10"
   }
 }
