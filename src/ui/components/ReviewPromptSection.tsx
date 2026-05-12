@@ -1,4 +1,3 @@
-import { typography } from '../typography';
 import { CHROME_WEB_STORE_LISTING_URL } from '../constants';
 
 function StarIcon(): React.ReactElement {
@@ -6,7 +5,7 @@ function StarIcon(): React.ReactElement {
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
-      className="h-4 w-4 text-warning-600"
+      className="h-3 w-3 text-warning-600"
       fill="currentColor"
       aria-hidden
     >
@@ -24,7 +23,7 @@ function ExternalLinkIcon(): React.ReactElement {
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
-      className="h-4 w-4 shrink-0"
+      className="h-3.5 w-3.5 shrink-0"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
@@ -42,50 +41,44 @@ function ExternalLinkIcon(): React.ReactElement {
 export function ReviewPromptSection(): React.ReactElement {
   return (
     <section
-      className="shrink-0 overflow-hidden rounded-xl border border-warning-200/90 bg-gradient-to-br from-warning-50 via-white to-primary-50/70 shadow-sm"
+      className="overflow-hidden rounded-lg border border-warning-200/90 bg-gradient-to-br from-warning-50 via-white to-primary-50/80"
       aria-labelledby="review-prompt-heading"
     >
-      <div className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:gap-8 sm:py-4 sm:pl-5 sm:pr-6">
-        <div className="min-w-0 flex-1 space-y-2.5 text-left">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <p className={`${typography.caption} text-warning-800`}>Chrome Web Store</p>
-            <div
-              className="inline-flex items-center gap-0.5 rounded-full bg-white/90 px-2.5 py-1 shadow-sm ring-1 ring-warning-200/80"
-              aria-hidden
-            >
-              <StarIcon />
-              <StarIcon />
-              <StarIcon />
-              <StarIcon />
-              <StarIcon />
-            </div>
+      <div className="flex flex-col gap-2.5 px-3 py-3">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <p className="font-poppins text-[10px] font-bold text-warning-800">Chrome Web Store</p>
+          <div
+            className="inline-flex items-center gap-0 rounded-full bg-white/90 px-1.5 py-0.5 shadow-sm ring-1 ring-warning-200/80"
+            aria-hidden
+          >
+            <StarIcon />
+            <StarIcon />
+            <StarIcon />
+            <StarIcon />
+            <StarIcon />
           </div>
-          <h2
-            id="review-prompt-heading"
-            className={`${typography.h2} text-lg font-extrabold tracking-tight text-primary-950`}
-          >
-            Enjoying Skip Wait?
-          </h2>
-          <p className={`${typography.bodySm} max-w-xl leading-relaxed text-neutral-800`}>
-            A quick star rating helps new users discover the extension and supports ongoing improvements.
-          </p>
         </div>
-        <div className="flex w-full shrink-0 flex-col items-center gap-2 sm:w-auto sm:min-w-[17.75rem] sm:items-stretch">
-          <a
-            href={CHROME_WEB_STORE_LISTING_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex max-w-full items-center justify-center gap-2 whitespace-nowrap rounded-radius-button bg-primary-600 px-4 py-2 font-poppins text-sm font-bold text-white shadow-md transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 sm:py-2.5"
-          >
-            <ExternalLinkIcon />
-            Rate on Chrome Web Store
-          </a>
-          <p
-            className={`${typography.caption} max-w-[17.75rem] text-balance text-center text-neutral-600 sm:whitespace-nowrap`}
-          >
-            Opens in a new tab · ~1&nbsp;min
-          </p>
-        </div>
+        <h2
+          id="review-prompt-heading"
+          className="font-poppins text-sm font-extrabold tracking-tight text-primary-950"
+        >
+          Enjoying Skip Wait?
+        </h2>
+        <p className="font-poppins text-xs font-medium leading-snug text-neutral-800">
+          A quick star rating helps others find the extension.
+        </p>
+        <a
+          href={CHROME_WEB_STORE_LISTING_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-radius-button bg-primary-600 px-3 py-2 font-poppins text-xs font-bold text-white shadow-md transition-colors hover:bg-primary-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+        >
+          <ExternalLinkIcon />
+          Rate on Chrome Web Store
+        </a>
+        <p className="text-center font-poppins text-[10px] font-bold text-neutral-600">
+          Opens in a new tab · ~1&nbsp;min
+        </p>
       </div>
     </section>
   );

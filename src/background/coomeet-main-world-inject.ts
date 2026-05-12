@@ -1,3 +1,5 @@
+import { isExtensionEnabledSync } from '../utils/extension-enabled';
+
 const injected = new Set<string>();
 
 function forgetTab(tabId: number): void {
@@ -10,6 +12,10 @@ export function initCoomeetMainWorldInject(): void {
   chrome.tabs.onRemoved.addListener(forgetTab);
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message?.type !== 'SKIP_WAIT_COOMEET_MAIN') return false;
+    if (!isExtensionEnabledSync()) {
+      sendResponse({ ok: false });
+      return false;
+    }
     const tabId = sender.tab?.id;
     const frameId = sender.frameId;
     if (tabId === undefined || frameId === undefined) {

@@ -1,3 +1,5 @@
+import { isExtensionEnabledSync } from '../utils/extension-enabled';
+
 export const MSG_INJECT_VISIBILITY_SPOOF = 'INJECT_VISIBILITY_SPOOF' as const;
 
 export function runDocumentVisibilitySpoof(): void {
@@ -22,6 +24,7 @@ const XDM_INTERSTITIAL = /^\/(?:r|download)\/[^/]+/;
 
 export function initDocumentVisibilitySpoof(): void {
   chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+    if (!isExtensionEnabledSync()) return;
     if (info.status !== 'loading') return;
     const raw = tab.url || tab.pendingUrl;
     if (!raw || !URL.canParse(raw)) return;
@@ -37,6 +40,10 @@ export function initDocumentVisibilitySpoof(): void {
   chrome.runtime.onMessage.addListener(
     (msg: { type?: string }, sender, sendResponse) => {
       if (msg?.type !== MSG_INJECT_VISIBILITY_SPOOF || !sender.tab?.id) {
+        sendResponse();
+        return;
+      }
+      if (!isExtensionEnabledSync()) {
         sendResponse();
         return;
       }

@@ -106,7 +106,7 @@ function startAdlinkflyLinksGo(): void {
   requestAnimationFrame(rafLoop);
 }
 
-function initAdlinkflyLinksGo(): void {
+export function initAdlinkflyLinksGo(): void {
   let engaged = false;
   const tryStart = (): void => {
     if (engaged || !isAdlinkflyLinksGoShell()) return;
@@ -141,5 +141,3 @@ function initAdlinkflyLinksGo(): void {
   document.addEventListener('readystatechange', onReadyState);
   onReadyState();
 }
-
-initAdlinkflyLinksGo();

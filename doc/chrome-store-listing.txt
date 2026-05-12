@@ -27,8 +27,8 @@ SUPPORTED SITES & BEHAVIOR
 FEATURES
 --------------------------------------------------------------------------------
 
-• Runs automatically on supported pages only - no toggles or settings to configure
-• Zero config - open the link as usual; the extension handles the rest
+• Runs automatically on supported pages when enabled - optional master switch in the popup turns all automation off or on globally
+• Zero site-by-site setup - open the link as usual; the extension handles the rest when it is on
 • Free - no subscription, sign-up, or paywall
 • Lightweight - no impact on sites that are not supported wait or short-link pages
 • Request new sites via the popup for future releases
@@ -53,6 +53,13 @@ SCRIPTING PERMISSION
 --------------------------------------------------------------------------------
 
 Skip Wait requests the "scripting" permission to run code on wait pages and short-link pages. It needs to run in the page context to detect countdown timers, resolve redirect chains, find or click skip/unlock controls, and inject controls when the host page does not provide them. Content scripts alone cannot reliably bypass many wait-page implementations. Scripting is used only on supported wait and short-link pages, and only for bypassing countdowns and waiting pages - not for analytics, ads, or any other purpose.
+
+
+--------------------------------------------------------------------------------
+STORAGE PERMISSION
+--------------------------------------------------------------------------------
+
+Skip Wait requests the "storage" permission (chrome.storage.local) only to save your global on/off choice from the extension popup. That value stays on your device, is not sent to us or any third party, and is not used for analytics or ads. The popup, background service worker, and content scripts all need the same saved setting so bypass behavior stays consistent until you change it. No personal data, browsing history, or page content is written to storage—only the enabled/disabled flag.
 
 
 --------------------------------------------------------------------------------

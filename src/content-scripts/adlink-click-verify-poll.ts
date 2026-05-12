@@ -60,7 +60,7 @@ function pollVerify(): void {
   intervalId = window.setInterval(tick, POLL_MS);
 }
 
-function initAdlinkClickVerifyPoll(): void {
+export function initAdlinkClickVerifyPoll(): void {
   const tryStart = (): void => {
     if (started || !isVerifyShell()) return;
     started = true;
@@ -102,5 +102,3 @@ function initAdlinkClickVerifyPoll(): void {
   document.addEventListener('readystatechange', onReadyState);
   onReadyState();
 }
-
-initAdlinkClickVerifyPoll();

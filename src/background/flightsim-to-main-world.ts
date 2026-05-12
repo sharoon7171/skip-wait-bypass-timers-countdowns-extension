@@ -1,5 +1,6 @@
 import { hostnameMatches } from '../utils/domain-check';
 import { bootstrapRemoteDomains, getHostsByKey } from '../utils/remote-domains';
+import { isExtensionEnabledSync } from '../utils/extension-enabled';
 
 const FLIGHTSIM_KEY = 'flightsim-to-download-instant';
 const FLIGHTSIM_SITEKEY = '0x4AAAAAAAEkCIsHFwbAgKn3';
@@ -196,6 +197,7 @@ export function initFlightsimToMainWorldInject(): void {
     if (changeInfo.status !== 'loading') return;
     const url = changeInfo.url ?? tab.url;
     void (async () => {
+      if (!isExtensionEnabledSync()) return;
       if (!(await isFlightsimAddonUrl(url))) return;
       try {
         await chrome.scripting.executeScript({

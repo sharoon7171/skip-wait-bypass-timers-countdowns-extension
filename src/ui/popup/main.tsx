@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { ReviewPromptSection } from '../components/ReviewPromptSection';
-import { typography } from '../typography';
 import { getRequestSupportUrl, CONTACT } from '../constants';
 import '../global.css';
 
@@ -18,68 +17,65 @@ function getExtensionIconUrl(): string {
 
 function PopupPage(): React.ReactElement {
   return (
-    <div className="box-border flex h-[600px] w-[800px] flex-col overflow-hidden bg-neutral-50 font-poppins">
+    <div className="box-border flex w-[420px] flex-col bg-neutral-50 font-poppins">
       <Header title="Skip Wait" iconUrl={getExtensionIconUrl()} />
-      <main className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-3">
-        <article className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-radius-card border border-neutral-200/90 bg-white shadow-sm">
-          <div className="flex min-h-0 flex-1 flex-col justify-between gap-4 px-6 py-5">
-            <section aria-labelledby="popup-summary-heading" className="shrink-0 text-left">
+      <main className="flex flex-col px-3 py-3">
+        <article className="overflow-hidden rounded-xl border border-neutral-200/90 bg-white shadow-sm">
+          <div className="divide-y divide-neutral-100">
+            <section aria-labelledby="popup-summary-heading" className="px-4 py-3 text-left">
               <h2
                 id="popup-summary-heading"
-                className={`${typography.h2} text-lg font-extrabold tracking-tight text-primary-950 sm:text-xl`}
+                className="font-poppins text-sm font-extrabold tracking-tight text-primary-950"
               >
                 How it works
               </h2>
-              <p className={`${typography.bodySm} mt-2 max-w-3xl leading-snug text-neutral-800`}>
+              <p className="mt-1.5 font-poppins text-xs font-medium leading-relaxed text-neutral-800">
                 On supported link shorteners and file hosts, one click skips the countdown and takes you
                 straight to the link.
               </p>
             </section>
 
-            <section
-              aria-labelledby="support-heading"
-              className="shrink-0 border-t border-neutral-200 pt-4 text-left"
-            >
+            <section aria-labelledby="support-heading" className="px-4 py-3 text-left">
               <h2
                 id="support-heading"
-                className={`${typography.h2} text-lg font-extrabold tracking-tight text-primary-950 sm:text-xl`}
+                className="font-poppins text-sm font-extrabold tracking-tight text-primary-950"
               >
                 Request a website
               </h2>
-              <p className={`${typography.bodySm} mt-2 max-w-3xl leading-snug text-neutral-800`}>
-                If a site shows a countdown or wait page we do not support yet, tell us the URL and what
-                you see. We use that to add support. Use GitHub, or email or Telegram below.
+              <p className="mt-1.5 font-poppins text-xs font-medium leading-relaxed text-neutral-800">
+                If a site shows a wait page we do not support yet, send the URL and what you see. We use
+                that to add support via GitHub, email, or Telegram.
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5">
                 <a
                   href={REQUEST_SUPPORT_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-radius-button bg-primary-600 px-4 py-2 font-poppins text-sm font-bold text-white shadow-sm hover:bg-primary-700 sm:py-2.5"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-radius-button bg-primary-600 px-3 py-1.5 font-poppins text-xs font-bold text-white shadow-sm hover:bg-primary-700"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 16 16"
-                    className="h-4 w-4 shrink-0"
+                    className="h-3.5 w-3.5 shrink-0"
                     fill="currentColor"
                     aria-hidden
                   >
                     <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
                   </svg>
-                  Ask to add a website
+                  Ask on GitHub
                 </a>
-                <span className="hidden text-neutral-300 sm:inline" aria-hidden>
+                <span className="text-neutral-300" aria-hidden>
                   ·
                 </span>
                 <a
                   href={`mailto:${CONTACT.email}`}
-                  className="inline-flex items-center gap-1.5 text-sm font-bold text-primary-700 hover:text-primary-800 hover:underline"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-primary-700 hover:text-primary-800 hover:underline"
                   aria-label="Email"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
-                    className="h-4 w-4 shrink-0"
+                    className="h-3.5 w-3.5 shrink-0"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
@@ -96,13 +92,13 @@ function PopupPage(): React.ReactElement {
                   href={CONTACT.telegram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm font-bold text-primary-700 hover:text-primary-800 hover:underline"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-primary-700 hover:text-primary-800 hover:underline"
                   aria-label="Telegram"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
-                    className="h-4 w-4 shrink-0"
+                    className="h-3.5 w-3.5 shrink-0"
                     aria-hidden
                   >
                     <path
@@ -115,7 +111,7 @@ function PopupPage(): React.ReactElement {
               </div>
             </section>
 
-            <div className="shrink-0 border-t border-neutral-200 pt-4">
+            <div className="p-3">
               <ReviewPromptSection />
             </div>
           </div>
@@ -131,6 +127,6 @@ if (root) {
   createRoot(root).render(
     <StrictMode>
       <PopupPage />
-    </StrictMode>
+    </StrictMode>,
   );
 }
