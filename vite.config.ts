@@ -10,6 +10,7 @@ export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss()],
   build: {
+    emptyOutDir: false,
     rollupOptions: {
       input: {
         background: resolve(__dirname, 'src/background/index.ts'),

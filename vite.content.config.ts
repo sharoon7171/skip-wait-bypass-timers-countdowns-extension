@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import { resolve, dirname } from 'path';
+import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -7,10 +7,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   base: './',
   build: {
-    outDir: 'dist',
     emptyOutDir: false,
-    minify: 'terser',
+    outDir: 'dist',
     sourcemap: false,
+    target: 'es2020',
+    minify: 'terser',
+    terserOptions: {
+      compress: { drop_console: true, drop_debugger: true },
+      mangle: true,
+    },
     rollupOptions: {
       input: {
         content: resolve(__dirname, 'src/content-scripts/index.ts'),
@@ -21,10 +26,5 @@ export default defineConfig({
         assetFileNames: '[name][extname]',
       },
     },
-    terserOptions: {
-      compress: { drop_console: true, drop_debugger: true },
-      mangle: true,
-    },
-    target: 'es2020',
   },
 });
