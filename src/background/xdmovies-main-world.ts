@@ -16,11 +16,26 @@ type Io = {
   connected?: boolean;
 };
 type IoFactory = (a: unknown, o?: Record<string, unknown>) => Io;
-type Turnstile = { render: (el: HTMLElement, o: Record<string, unknown>) => void };
+type Turnstile = {
+  render: (el: HTMLElement, o: Record<string, unknown>) => string;
+  reset?: (widgetId?: string) => void;
+};
 
 export function runXdmoviesMainWorldFlow(P: XdmoviesMainWorldPayload): void {
   const post = (phase: string, extra?: Record<string, unknown>): void => {
     window.postMessage({ source: P.msgSource, phase, ...(extra ?? {}) }, location.origin);
+  };
+
+  const spoofVisibility = (): void => {
+    try {
+      Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+      Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
+      Object.defineProperty(Document.prototype, 'hasFocus', {
+        value: () => true,
+        configurable: true,
+        writable: true,
+      });
+    } catch {}
   };
 
   const trapGlobal = <T>(key: string, ready: (v: T) => boolean): Promise<T> =>
@@ -39,8 +54,30 @@ export function runXdmoviesMainWorldFlow(P: XdmoviesMainWorldPayload): void {
       });
     });
 
+  const revealTurnstile = (): HTMLElement => {
+    const box = document.getElementById('turnstileContainer');
+    box?.classList.remove('hidden');
+    box?.style.setProperty('display', 'block', 'important');
+    box?.style.setProperty('min-height', '72px', 'important');
+    box?.style.setProperty('visibility', 'visible', 'important');
+    box?.style.setProperty('opacity', '1', 'important');
+    const el =
+      (document.getElementById('turnstileWidget') as HTMLElement | null) ??
+      (box ?? document.body).appendChild(
+        Object.assign(document.createElement('div'), { id: 'turnstileWidget' }),
+      );
+    el.style.setProperty('min-width', '300px', 'important');
+    el.style.setProperty('min-height', '65px', 'important');
+    el.style.setProperty('visibility', 'visible', 'important');
+    el.style.setProperty('opacity', '1', 'important');
+    el.scrollIntoView({ block: 'center', behavior: 'instant' });
+    return el;
+  };
+
   void (async () => {
     try {
+      spoofVisibility();
+      revealTurnstile();
       const waitEndTs = Date.now() + P.waitMs;
       post('parallel', { waitEndTs });
 
@@ -49,7 +86,11 @@ export function runXdmoviesMainWorldFlow(P: XdmoviesMainWorldPayload): void {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({ code: P.code, fingerprint: P.fingerprint }),
-      }).then((r) => r.json() as Promise<{ sessionId: string; token: string }>);
+      }).then(async (r) => {
+        const json = (await r.json()) as { sessionId?: string; token?: string; error?: string };
+        if (!json.sessionId || !json.token) throw new Error(json.error ?? `session ${r.status}`);
+        return json as { sessionId: string; token: string };
+      });
 
       const ioPromise = trapGlobal<IoFactory>('io', (v) => typeof v === 'function');
 
@@ -58,8 +99,11 @@ export function runXdmoviesMainWorldFlow(P: XdmoviesMainWorldPayload): void {
         await new Promise<void>((resolve, reject) => {
           const s = ioFn(undefined, { transports: ['websocket'] });
           setInterval(() => {
-            if (s.connected) s.emit('heartbeat');
-          }, 100);
+            if (s.connected) {
+              s.emit('heartbeat');
+              s.emit('visibility', 'visible');
+            }
+          }, 1000);
           s.on('connect', () => {
             s.emit('bind', sess.token);
             s.emit('visibility', 'visible');
@@ -70,15 +114,8 @@ export function runXdmoviesMainWorldFlow(P: XdmoviesMainWorldPayload): void {
         return sess;
       })();
 
-      const tokenPromise = (async () => {
-        const box = document.getElementById('turnstileContainer');
-        box?.classList.remove('hidden');
-        const el =
-          (document.getElementById('turnstileWidget') as HTMLElement | null) ??
-          (box ?? document.body).appendChild(
-            Object.assign(document.createElement('div'), { id: 'turnstileWidget' }),
-          );
-        el.scrollIntoView({ block: 'center', behavior: 'instant' });
+      const tokenPromise = (async (): Promise<string> => {
+        const el = revealTurnstile();
         const ts = await trapGlobal<Turnstile>('turnstile', (v) => typeof v?.render === 'function');
         const readExistingToken = (): string | null => {
           const input = document.querySelector<HTMLInputElement>('input[name="cf-turnstile-response"]');
@@ -96,15 +133,26 @@ export function runXdmoviesMainWorldFlow(P: XdmoviesMainWorldPayload): void {
             finish(existing);
             return;
           }
-          try {
-            ts.render(el, {
-              sitekey: P.sitekey,
-              callback: finish,
-              'error-callback': () => post('turnstile_error'),
-              'expired-callback': () => post('turnstile_expired'),
-            });
-          } catch {}
+          const hasWidget = el.querySelector('iframe, input[name="cf-turnstile-response"]');
+          if (!hasWidget) {
+            try {
+              ts.render(el, {
+                sitekey: P.sitekey,
+                theme: 'dark',
+                size: 'normal',
+                callback: finish,
+                'error-callback': () => post('turnstile_error'),
+                'expired-callback': () => post('turnstile_expired'),
+              });
+            } catch {
+              try {
+                ts.reset?.();
+              } catch {}
+            }
+          }
           pollId = window.setInterval(() => {
+            revealTurnstile();
+            spoofVisibility();
             const v = readExistingToken();
             if (v) finish(v);
           }, 250);
@@ -128,7 +176,8 @@ export function runXdmoviesMainWorldFlow(P: XdmoviesMainWorldPayload): void {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fingerprint: P.fingerprint, turnstileToken: tok }),
       });
-      const body = (await cr.json()) as { token: string };
+      const body = (await cr.json()) as { token?: string; error?: string };
+      if (!body.token) throw new Error(body.error ?? `complete ${cr.status}`);
       post('redirect');
       window.location.href = `/go/${encodeURIComponent(sess.sessionId)}?t=${encodeURIComponent(body.token)}`;
     } catch (e) {
