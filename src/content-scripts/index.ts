@@ -9,6 +9,7 @@ import {
   runCoomeetMainWorldAccelerator,
 } from './coomeet-iframe';
 import { initAdlinkClickVerifyPoll } from './adlink-click-verify-poll';
+import { initArolinksBypass } from './arolinks-bypass';
 import { initAdlinkflyLinksGo } from './adlinkfly-links-go';
 import { initAdlinkflyTokenPayloadRedirect } from './adlinkfly-token-payload-redirect';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article';
@@ -77,6 +78,13 @@ const INITS = [
 ];
 
 const isExtensionContext = typeof chrome !== 'undefined' && !!chrome.runtime?.id;
+
+function bootArolinksBypass(): void {
+  if (!isExtensionContext || window !== window.top) return;
+  initArolinksBypass();
+}
+
+bootArolinksBypass();
 
 async function runWhenEnabled(): Promise<void> {
   if (!isExtensionContext) {

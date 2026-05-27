@@ -19,6 +19,12 @@ function hasLinksGoHint(): boolean {
   return false;
 }
 
+function arolinksBypassActive(): boolean {
+  if (!location.hostname.includes('arolinks.com')) return false;
+  if (!document.getElementById('skip-wait-arolinks-overlay')) return false;
+  return !isAdlinkflyLinksGoShell();
+}
+
 function runWhenNotLoading(run: () => void): void {
   if (document.readyState !== 'loading') run();
   else
@@ -109,7 +115,7 @@ function startAdlinkflyLinksGo(): void {
 export function initAdlinkflyLinksGo(): void {
   let engaged = false;
   const tryStart = (): void => {
-    if (engaged || !isAdlinkflyLinksGoShell()) return;
+    if (engaged || arolinksBypassActive() || !isAdlinkflyLinksGoShell()) return;
     engaged = true;
     startAdlinkflyLinksGo();
   };
