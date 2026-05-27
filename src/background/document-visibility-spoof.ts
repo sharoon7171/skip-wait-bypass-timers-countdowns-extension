@@ -39,13 +39,10 @@ export function initDocumentVisibilitySpoof(): void {
 
   chrome.runtime.onMessage.addListener(
     (msg: { type?: string }, sender, sendResponse) => {
-      if (msg?.type !== MSG_INJECT_VISIBILITY_SPOOF || !sender.tab?.id) {
-        sendResponse();
-        return;
-      }
+      if (msg?.type !== MSG_INJECT_VISIBILITY_SPOOF || !sender.tab?.id) return false;
       if (!isExtensionEnabledSync()) {
         sendResponse();
-        return;
+        return false;
       }
       chrome.scripting
         .executeScript({

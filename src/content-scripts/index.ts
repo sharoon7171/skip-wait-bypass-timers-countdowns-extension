@@ -29,6 +29,7 @@ import { initOnhaxpkCopy } from './onhaxpk-copy';
 import { initOnlinetoolsDirectDownload } from './onlinetools-direct-download';
 import { initPrmoviesRedirect } from './prmovies-redirect';
 import { initRomsfunDownloadInstant } from './romsfun-download-instant';
+import { initShortxlinksSafelinkChain } from './shortxlinks-safelink-chain';
 import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogger';
 import { initShrtflyRedirect } from './shrtfly-redirect';
 import { initStbemuiptvcodesWpsafelink } from './stbemuiptvcodes-wpsafelink';
@@ -86,6 +87,7 @@ async function runWhenEnabled(): Promise<void> {
   if (isOnCoomeetIframeHost()) {
     initCoomeetIframeBootstrap();
   } else if (window === window.top) {
+    initShortxlinksSafelinkChain();
     void bootstrapRemoteDomains().then(() => {
       for (const init of INITS) {
         try {
