@@ -87,6 +87,31 @@ function storeResult(tokenUrl: string, adTime: number): void {
   } catch {}
 }
 
+function clearChainSession(): void {
+  try {
+    sessionStorage.removeItem(SESSION_START);
+    sessionStorage.removeItem(SESSION_TOKEN);
+    sessionStorage.removeItem(SESSION_AD_TIME);
+  } catch {}
+}
+
+function normalizePageUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.origin + u.pathname + u.search;
+  } catch {
+    return url.split('#')[0] ?? url;
+  }
+}
+
+function isShortxFinalTimerPage(): boolean {
+  if (!location.hostname.includes('shortxlinks.com')) return false;
+  if (!/\/rcz_/i.test(location.pathname)) return false;
+  if (document.title.includes('Too Early')) return false;
+  if (location.search.length > 1) return true;
+  return !!document.querySelector('#go-link, form[action*="/links/go"]');
+}
+
 function isTooEarlyShortx(): boolean {
   return location.hostname.includes('shortxlinks.com') && document.title.includes('Too Early');
 }
@@ -114,7 +139,8 @@ function shouldRunEager(): boolean {
 
 function shouldRun(): boolean {
   if (window !== window.top) return false;
-  if (!isAllowedHost(allowedHosts())) return false;
+  const inChain = hasChainMarkers();
+  if (!isAllowedHost(allowedHosts()) && !inChain) return false;
   if (
     location.hostname.includes('shortxlinks.com') &&
     document.querySelector('#go-link, form[action*="/links/go"]') &&
@@ -122,7 +148,7 @@ function shouldRun(): boolean {
   )
     return true;
   if (isTooEarlyShortx() && readStoredResult()) return true;
-  return hasChainMarkers();
+  return inChain;
 }
 
 function overlayCss(): string {
@@ -216,19 +242,24 @@ function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function requestFetchChain(startUrl: string): Promise<ShortxFetchResult> {
+async function readBackgroundResult(startUrl: string): Promise<ShortxFetchResult | null> {
   const key = shortxResultKey(startUrl);
+  const data = await chrome.storage.local.get(key);
+  const result = data[key] as ShortxFetchResult | undefined;
+  if (!result) return null;
   await chrome.storage.local.remove(key);
+  return result;
+}
+
+async function requestFetchChain(startUrl: string): Promise<ShortxFetchResult> {
+  const cached = await readBackgroundResult(startUrl);
+  if (cached) return cached;
   await new Promise<void>((resolve) => {
     chrome.runtime.sendMessage({ type: SHORTX_FETCH_CHAIN, startUrl }, () => resolve());
   });
   for (let i = 0; i < 120; i++) {
-    const data = await chrome.storage.local.get(key);
-    const result = data[key] as ShortxFetchResult | undefined;
-    if (result) {
-      await chrome.storage.local.remove(key);
-      return result;
-    }
+    const result = await readBackgroundResult(startUrl);
+    if (result) return result;
     await sleep(500);
   }
   return { ok: false, error: 'verification timed out' };
@@ -280,6 +311,33 @@ async function postLinksGo(): Promise<string | null> {
   }
 }
 
+async function finishOnTimerPage(ui: OverlayUi): Promise<boolean> {
+  ui.setStatus('Opening your destination…');
+  let posted = false;
+  for (let i = 0; i < 120; i++) {
+    const link = document.querySelector<HTMLAnchorElement>('a.get-link');
+    if (link?.href && /^https?:\/\//.test(link.href) && !link.classList.contains('disabled')) {
+      clearChainSession();
+      window.location.replace(link.href);
+      return true;
+    }
+    const form = document.querySelector<HTMLFormElement>('#go-link, form[action*="/links/go"]');
+    if (form && !posted) {
+      posted = true;
+      const dest = await postLinksGo();
+      if (dest) {
+        clearChainSession();
+        window.location.replace(dest);
+        return true;
+      }
+    }
+    await sleep(250);
+  }
+  ui.setError('Could not generate link. Try refreshing.');
+  flowStarted = false;
+  return false;
+}
+
 async function waitForUnlock(tokenUrl: string, adTime: number, ui: OverlayUi): Promise<void> {
   const endTs = adTime + AD_WAIT_MS;
   ui.setStatus('Waiting for your link to unlock…');
@@ -288,6 +346,10 @@ async function waitForUnlock(tokenUrl: string, adTime: number, ui: OverlayUi): P
     if (await isTokenUnlocked(tokenUrl)) {
       ui.stopCountdown();
       ui.setStatus('Opening your link…');
+      if (normalizePageUrl(location.href) === normalizePageUrl(tokenUrl)) {
+        await finishOnTimerPage(ui);
+        return;
+      }
       window.location.replace(tokenUrl);
       return;
     }
@@ -295,6 +357,10 @@ async function waitForUnlock(tokenUrl: string, adTime: number, ui: OverlayUi): P
   }
   ui.stopCountdown();
   ui.setStatus('Opening your link…');
+  if (normalizePageUrl(location.href) === normalizePageUrl(tokenUrl)) {
+    await finishOnTimerPage(ui);
+    return;
+  }
   window.location.replace(tokenUrl);
 }
 
@@ -306,19 +372,15 @@ async function runFlow(): Promise<void> {
   try {
     persistStartFromLocation();
     const stored = readStoredResult();
-    if (isTooEarlyShortx() && stored) {
-      await waitForUnlock(stored.tokenUrl, stored.adTime, ui);
+    if (
+      isShortxFinalTimerPage() ||
+      (stored && normalizePageUrl(location.href) === normalizePageUrl(stored.tokenUrl))
+    ) {
+      await finishOnTimerPage(ui);
       return;
     }
-    const onTimer =
-      location.hostname.includes('shortxlinks.com') &&
-      !!document.querySelector('#go-link, form[action*="/links/go"]') &&
-      !document.title.includes('Too Early');
-    if (onTimer) {
-      ui.setStatus('Opening your destination…');
-      const dest = await postLinksGo();
-      if (dest) window.location.replace(dest);
-      else ui.setError('Could not generate link. Try refreshing.');
+    if (isTooEarlyShortx() && stored) {
+      await waitForUnlock(stored.tokenUrl, stored.adTime, ui);
       return;
     }
     const startUrl = startUrlFromPage();
