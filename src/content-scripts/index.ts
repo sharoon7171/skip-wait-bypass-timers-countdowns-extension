@@ -10,6 +10,7 @@ import {
 } from './coomeet-iframe';
 import { initAdlinkClickVerifyPoll } from './adlink-click-verify-poll';
 import { initArolinksBypass } from './arolinks-bypass';
+import { initCut4MoneyBypass } from './cut4money-bypass';
 import { initAdlinkflyLinksGo } from './adlinkfly-links-go';
 import { initAdlinkflyTokenPayloadRedirect } from './adlinkfly-token-payload-redirect';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article';
@@ -79,12 +80,13 @@ const INITS = [
 
 const isExtensionContext = typeof chrome !== 'undefined' && !!chrome.runtime?.id;
 
-function bootArolinksBypass(): void {
+function bootCut4MoneyBypass(): void {
   if (!isExtensionContext || window !== window.top) return;
   initArolinksBypass();
+  initCut4MoneyBypass();
 }
 
-bootArolinksBypass();
+bootCut4MoneyBypass();
 
 async function runWhenEnabled(): Promise<void> {
   if (!isExtensionContext) {

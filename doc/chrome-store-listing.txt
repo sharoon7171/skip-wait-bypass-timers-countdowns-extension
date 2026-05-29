@@ -59,7 +59,14 @@ Skip Wait requests the "scripting" permission to run code on wait pages and shor
 STORAGE PERMISSION
 --------------------------------------------------------------------------------
 
-Skip Wait requests the "storage" permission (chrome.storage.local) only to save your global on/off choice from the extension popup. That value stays on your device, is not sent to us or any third party, and is not used for analytics or ads. The popup, background service worker, and content scripts all need the same saved setting so bypass behavior stays consistent until you change it. No personal data, browsing history, or page content is written to storage—only the enabled/disabled flag.
+Skip Wait requests the "storage" permission (chrome.storage.local) to save your global on/off choice from the extension popup and short-lived bypass progress for multi-step shortener flows (for example, v2links / Cut4Money-style chains on shr2.link and nitro-link.com). That data stays on your device, is not sent to us or any third party, and is not used for analytics or ads. The popup, background service worker, and content scripts share the same settings so bypass behavior stays consistent until you change it or the flow completes. No personal data, browsing history, or full page content is written to storage.
+
+
+--------------------------------------------------------------------------------
+WEB NAVIGATION PERMISSION
+--------------------------------------------------------------------------------
+
+Skip Wait requests the "webNavigation" permission for a narrow use on certain v2links shorteners (including shr2.link and nitro-link.com). Those sites redirect away almost instantly, before a page script can run. The background service worker listens for navigation to those short-link URLs only, fetches the first redirect target from the shortener, and updates the tab so you reach the verification article without losing the bypass. It is not used to track where you browse in general—only to intercept supported shortener entry URLs in time. The final download URL always comes from the shortener’s own API response, not from a hardcoded destination.
 
 
 --------------------------------------------------------------------------------

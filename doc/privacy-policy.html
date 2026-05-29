@@ -10,7 +10,7 @@
     <header>
       <p>Skip Wait - Bypass Timers & Countdowns</p>
       <h1>Privacy Policy</h1>
-      <p>Last updated: March 19, 2025</p>
+      <p>Last updated: May 29, 2026</p>
     </header>
 
     <p>This privacy policy describes how the Skip Wait Chrome extension (“Extension”) handles information. The Extension bypasses countdown timers and skip-wait pages on supported link shorteners and file hosts.</p>
@@ -21,7 +21,9 @@
           <h2>1. Permissions</h2>
           <p>The Extension requests the following Chrome permissions:</p>
           <ul>
-            <li><strong>Scripting</strong> - Used to run bypass logic on pages you visit.</li>
+            <li><strong>Scripting</strong> - Used to run bypass logic on supported wait and short-link pages.</li>
+            <li><strong>Storage</strong> - Used only on your device to remember your global on/off setting and short-lived bypass progress (for example, which step of a multi-page shortener flow you are on). Nothing in storage is sent to the developer or third parties.</li>
+            <li><strong>Web navigation</strong> - Used only to detect when you open certain v2links shorteners (such as shr2.link and nitro-link.com) before the page redirects away, so the Extension can send you to the verification step in time. It is not used to read your browsing history broadly.</li>
             <li><strong>Access to all URLs</strong> - Required so the Extension can run on wait pages and link shorteners where it provides bypass.</li>
           </ul>
         </section>
@@ -30,7 +32,8 @@
       <li>
         <section>
           <h2>2. Data handling</h2>
-          <p>The Extension does not collect, store, or transmit your personal data. It does not use Chrome storage, and it does not use analytics, tracking, or telemetry.</p>
+          <p>The Extension does not collect or transmit your personal data, browsing history, or page content to the developer or any third party. It does not use analytics, tracking, or telemetry.</p>
+          <p>Chrome’s local storage is used only for your on/off preference and temporary bypass state on your device, as described under Permissions.</p>
           <p>On certain supported sites, the Extension may read or clear data stored by that site in your browser (for example, in that page’s localStorage) only to perform the bypass. That data is not sent to the developer or any third party.</p>
         </section>
       </li>
