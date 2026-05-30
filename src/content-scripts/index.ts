@@ -88,6 +88,13 @@ function bootCut4MoneyBypass(): void {
 
 bootCut4MoneyBypass();
 
+function bootLinkjustBypass(): void {
+  if (!isExtensionContext || window !== window.top) return;
+  initLinkjustTimerChainBypass();
+}
+
+bootLinkjustBypass();
+
 async function runWhenEnabled(): Promise<void> {
   if (!isExtensionContext) {
     runCoomeetMainWorldAccelerator();

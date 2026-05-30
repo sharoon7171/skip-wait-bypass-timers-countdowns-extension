@@ -1,244 +1,335 @@
-import { hostnameMatches } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
+import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
+import { extractLinkjustHop, isFinalHop } from '../linkjust/extract-hop';
+import {
+  destinationFromLinkjustApiUrl,
+  fetchLinkjustFirstHop,
+  isLinkjustHost,
+  linkjustAliasFromUrl,
+  linkjustRoots,
+} from '../linkjust/hosts';
+import {
+  chainNeedsReset,
+  clearLinkjustChain,
+  EMPTY_LINKJUST_CHAIN,
+  markArticleVisited,
+  readLinkjustChain,
+  rememberLinkjustAlias,
+  resolveLinkjustAliasSync,
+  shouldReturnToShortener,
+  shortenerUnlockUrl,
+  writeLinkjustChain,
+  type LinkjustChain,
+} from '../linkjust/linkjust-chain';
+import { isLinkjustMediatorShell } from '../linkjust/mediator';
+import {
+  clearOverlaySession,
+  mountLinkjustOverlay,
+  readOverlaySession,
+  restoreOverlayFromSession,
+  type OverlayCopy,
+} from '../linkjust/overlay';
+import { dismissLinkjustAdblockOverlay, nudgeLinkjustTimerUi } from '../linkjust/timer-ui';
+import { finishLinkjustUnlock, isLinkjustUnlockPage } from '../linkjust/unlock';
 
-const KEY = 'linkjust';
+const COPY = {
+  entry: {
+    title: 'Step 1 · Opening verification',
+    detail: 'Loading the Linkjust article page.',
+  },
+  article: {
+    title: 'Step 2 · Skipping article timer',
+    detail: 'Following the Linkjust article chain.',
+  },
+  unlock: {
+    title: 'Step 3 · Unlocking your link',
+    detail: 'Fetching your URL from Linkjust.',
+  },
+  destination: {
+    title: 'Done · Opening your link',
+    detail: 'Redirecting to your destination now.',
+  },
+  failed: {
+    title: 'Could not finish',
+    detail: 'Reload the Linkjust short link and try again.',
+  },
+} as const;
 
 const OBS_HOP: MutationObserverInit = {
-  attributeFilter: ['href', 'style', 'class'],
+  attributeFilter: ['href', 'style', 'class', 'disabled'],
   attributes: true,
   childList: true,
   subtree: true,
 };
-const CHAIN_HTML_MARKERS = [
-  'Loading Link',
-  'linkjust-timer',
-  'linkjustInit',
-  'next-timer-btn',
-  'timer_seconds',
-  'final-link-wrapper',
-  'linkjust-progress-marker',
-] as const;
-const WP_TIMER_SEL =
-  '#next-timer-btn,#linkjust-timer,#timer_seconds,#mdtimer,#linkjust-progress-marker';
 
-function isLinkjustHost(hostname: string): boolean {
-  return hostnameMatches(hostname, getHostsByKey(KEY));
+let flowRunning = false;
+let navigating = false;
+let hopLoopRunning = false;
+let cachedChain: LinkjustChain = { ...EMPTY_LINKJUST_CHAIN };
+let overlay: ReturnType<typeof mountLinkjustOverlay> | null = restoreOverlayFromSession();
+
+function isLinkjustRootHost(): boolean {
+  return isLinkjustHost() && isAllowedHost(linkjustRoots()) && !!linkjustAliasFromUrl(location.href);
 }
 
-function isTimerChainTemplate(doc: Document): boolean {
-  if (doc.querySelector(WP_TIMER_SEL)) return true;
-  if (doc.querySelector('#final-link-wrapper')) return true;
-  if (doc.querySelector('a#next-timer-btn')) return true;
-  if (doc.querySelector('a[href*="ViewArticle="],a[href*="viewarticle="]')) return true;
-  const html = doc.documentElement.innerHTML;
-  if (CHAIN_HTML_MARKERS.some((s) => html.includes(s))) return true;
-  return /ViewArticle=|viewarticle=/i.test(html);
+function requestVisibilitySpoof(): void {
+  chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
 }
 
-function isShortSlugPath(): boolean {
-  try {
-    const u = new URL(window.location.href);
-    if (!isLinkjustHost(u.hostname)) return false;
-    const seg = u.pathname.replace(/^\/+|\/+$/g, '').split('/')[0] ?? '';
-    if (!seg || seg.includes('.') || !/^[A-Za-z0-9]+$/.test(seg)) return false;
-    if (seg.length < 6 || seg.length > 80) return false;
-    return /[0-9]/.test(seg) || seg.length >= 12;
-  } catch {
-    return false;
+function ensureOverlay(copy: OverlayCopy): void {
+  overlay ??= mountLinkjustOverlay();
+  overlay.setPhase(copy.title, copy.detail);
+}
+
+function chainPayload(alias: string, chain: LinkjustChain | null): LinkjustChain {
+  return {
+    alias,
+    shortenerHost:
+      chain?.shortenerHost ??
+      (isLinkjustHost() ? location.hostname.replace(/^www\./i, '') : null) ??
+      linkjustRoots()[0] ??
+      'linkjust.com',
+    startedAt: chain?.startedAt || Date.now(),
+    visitedPaths: chain?.visitedPaths ?? [],
+    hopCount: chain?.hopCount ?? 0,
+  };
+}
+
+function go(url: string, copy: OverlayCopy): void {
+  navigating = true;
+  ensureOverlay(copy);
+  window.location.replace(url);
+}
+
+function goDestination(url: string): void {
+  if (navigating) return;
+  navigating = true;
+  ensureOverlay(COPY.destination);
+  void clearLinkjustChain();
+  clearOverlaySession();
+  window.location.replace(url);
+}
+
+async function syncChain(update?: (chain: LinkjustChain) => LinkjustChain): Promise<LinkjustChain> {
+  cachedChain = await readLinkjustChain();
+  if (update) {
+    cachedChain = update(cachedChain);
+    await writeLinkjustChain(cachedChain);
   }
+  return cachedChain;
 }
 
-function normPath(pathname: string): string {
-  const s = pathname.replace(/\/+$/, '').toLowerCase();
-  return s === '' ? '/' : s;
+function resolveAlias(): string | null {
+  return resolveLinkjustAliasSync(cachedChain);
 }
 
-function shouldFollowHop(urlStr: string): boolean {
-  try {
-    const t = new URL(urlStr, window.location.origin);
-    const p = t.protocol.toLowerCase();
-    if (p !== 'http:' && p !== 'https:') return false;
-    const cur = new URL(window.location.href);
-    if (t.origin !== cur.origin) return true;
-    if (normPath(t.pathname) === normPath(cur.pathname)) return false;
-    return `${t.pathname}${t.search}` !== `${cur.pathname}${cur.search}`;
-  } catch {
-    return false;
+function pickHop() {
+  const alias = resolveAlias();
+  return extractLinkjustHop(alias, cachedChain.visitedPaths);
+}
+
+function goShortenerUnlock(copy: OverlayCopy = COPY.unlock): void {
+  const url = shortenerUnlockUrl(cachedChain);
+  if (!url) return;
+  go(url, copy);
+}
+
+function followHop(hop: NonNullable<ReturnType<typeof extractLinkjustHop>>): void {
+  const alias = resolveAlias();
+  if (alias) {
+    cachedChain = chainPayload(alias, cachedChain);
+    void writeLinkjustChain(cachedChain);
   }
-}
 
-function normUrl(urlStr: string): string {
-  try {
-    const x = new URL(urlStr, window.location.origin);
-    x.hash = '';
-    return `${x.protocol}//${x.host}${x.pathname}${x.search}`.toLowerCase();
-  } catch {
-    return '';
+  if (hop.kind === 'shortener') {
+    go(hop.url, COPY.unlock);
+    return;
   }
-}
 
-function isOffDomain(urlStr: string): boolean {
-  try {
-    const a = new URL(urlStr, window.location.origin).hostname.toLowerCase();
-    const b = new URL(window.location.href).hostname.toLowerCase();
-    return a !== b;
-  } catch {
-    return false;
+  if (hop.kind === 'destination' && isFinalHop(hop.url)) {
+    goDestination(hop.url);
+    return;
   }
+
+  void syncChain((chain) => markArticleVisited(chain)).then(() => {
+    go(hop.url, COPY.article);
+  });
 }
 
-function isLinkjustUrl(urlStr: string): boolean {
-  try {
-    return isLinkjustHost(new URL(urlStr).hostname);
-  } catch {
-    return false;
-  }
-}
+function runHopLoop(): void {
+  if (hopLoopRunning || navigating) return;
+  hopLoopRunning = true;
+  ensureOverlay(COPY.article);
 
-function collectFromDom(): string[] {
-  const q = <T extends Element>(s: string) => [...document.querySelectorAll<T>(s)];
-  return [
-    document.querySelector<HTMLAnchorElement>('a#final-link-wrapper')?.href,
-    ...q<HTMLAnchorElement>('a[href*="ViewArticle="],a[href*="viewarticle="]').map((e) => e.href),
-    document.querySelector<HTMLAnchorElement>('a#next-timer-btn')?.href,
-    ...q<HTMLAnchorElement>('a[href^="https://linkjust.com/"],a[href^="http://linkjust.com/"]').map(
-      (e) => e.href,
-    ),
-  ].filter((x): x is string => Boolean(x));
-}
-
-function collectFromEscaped(html: string): string[] {
-  const raw: string[] = [];
-  const va =
-    /https:\\\/\\\/[a-z0-9][a-z0-9.-]*\.[a-z]{2,}[^'"\\]*(?:\\?|&)(?:ViewArticle|viewarticle)=[\w-]+/gi;
-  let m: RegExpExecArray | null;
-  while ((m = va.exec(html)) !== null) raw.push(m[0].replace(/\\\//g, '/'));
-  const lj = /https:\\\/\\\/linkjust\.com\\\/[a-zA-Z0-9]+/gi;
-  while ((m = lj.exec(html)) !== null) raw.push(m[0].replace(/\\\//g, '/'));
-  return raw;
-}
-
-function collectBareLj(html: string): string[] {
-  const raw: string[] = [];
-  const re = /https:\/\/linkjust\.com\/[a-zA-Z0-9]+(?:\?[^"'<>\s]*)?/gi;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(html)) !== null) {
-    const s = m[0].replace(/[),.;]+$/, '');
-    const base = s.split('?')[0];
-    if (base && /^https:\/\/linkjust\.com\/[a-zA-Z0-9]+\/?$/i.test(base)) raw.push(s);
-  }
-  return raw;
-}
-
-function collectFromHtml(html: string): string[] {
-  const raw: string[] = [];
-  const va =
-    /https:\/\/[a-z0-9][a-z0-9.-]*\.[a-z]{2,}[^\s"'<>]*(?:\?|&)(?:ViewArticle|viewarticle)=[\w-]+/gi;
-  let m: RegExpExecArray | null;
-  while ((m = va.exec(html)) !== null) raw.push(m[0]);
-  const fw1 = html.match(/id=["']final-link-wrapper["'][^>]*href=["'](https:[^"']+)["']/i);
-  const fw2 = html.match(/href=["'](https:[^"']+)["'][^>]*id=["']final-link-wrapper["']/i);
-  for (const x of [fw1?.[1], fw2?.[1]]) if (x) raw.push(x);
-  raw.push(...collectBareLj(html), ...collectFromEscaped(html));
-  return raw;
-}
-
-function dedupeValid(urls: string[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const u of urls) {
-    if (!shouldFollowHop(u)) continue;
-    const n = normUrl(u);
-    if (!n || seen.has(n)) continue;
-    seen.add(n);
-    out.push(u);
-  }
-  return out;
-}
-
-function pickForward(valid: string[]): string | null {
-  const ref = document.referrer ? normUrl(document.referrer) : '';
-  const off = valid.filter(isOffDomain);
-  const head = [...off.filter(isLinkjustUrl), ...off.filter((u) => !isLinkjustUrl(u))][0];
-  if (head) return head;
-  for (const u of valid) {
-    if (isOffDomain(u)) continue;
-    const n = normUrl(u);
-    if (!ref || n !== ref) return u;
-  }
-  return null;
-}
-
-function extractNextHop(): string | null {
-  const html = document.documentElement.innerHTML;
-  return pickForward(dedupeValid([...collectFromDom(), ...collectFromHtml(html)]));
-}
-
-function runHopBypass(): void {
-  let onLj = false;
-  try {
-    onLj = isLinkjustHost(new URL(window.location.href).hostname);
-  } catch {
-    onLj = false;
-  }
-  const tpl = isTimerChainTemplate(document);
-  const short = onLj && isShortSlugPath();
-  if (!tpl && !short) return;
   let done = false;
   const tryGo = (): boolean => {
-    if (done) return true;
-    const next = extractNextHop();
-    if (!next) return false;
-    if (onLj && !isTimerChainTemplate(document) && isLinkjustUrl(next)) return false;
+    if (done || navigating) return true;
+
+    const hop = pickHop();
+    if (shouldReturnToShortener(cachedChain, hop)) {
+      done = true;
+      goShortenerUnlock(COPY.article);
+      return true;
+    }
+    if (!hop) return false;
+
     done = true;
-    window.location.replace(next);
+    followHop(hop);
     return true;
   };
+
+  const prep = (): void => {
+    dismissLinkjustAdblockOverlay();
+    if (!tryGo()) nudgeLinkjustTimerUi();
+  };
+
   const observer = new MutationObserver(() => {
+    prep();
     if (tryGo()) observer.disconnect();
   });
-  chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
+
+  requestVisibilitySpoof();
+  prep();
   if (tryGo()) return;
+
   observer.observe(document.documentElement, OBS_HOP);
   let micro = 0;
   const microBurst = (): void => {
     if (done) return;
+    prep();
     if (tryGo()) return void observer.disconnect();
-    if (++micro < 48) queueMicrotask(microBurst);
+    if (++micro < 64) queueMicrotask(microBurst);
   };
   queueMicrotask(microBurst);
+
   let frames = 0;
   const raf = (): void => {
     if (done) return;
+    prep();
     if (tryGo()) return void observer.disconnect();
-    if (++frames < 960) requestAnimationFrame(raf);
+    if (++frames < 480) requestAnimationFrame(raf);
   };
   requestAnimationFrame(raf);
 }
 
-export function initLinkjustTimerChainBypass(): void {
-  const go = (): void => {
-    let h = '';
-    try {
-      h = new URL(window.location.href).hostname.toLowerCase();
-    } catch {
-      return;
-    }
-    const onLj = isLinkjustHost(h);
-    if (onLj) {
-      if (!isShortSlugPath() && !isTimerChainTemplate(document)) return;
-      runHopBypass();
-      return;
-    }
-    if (!isTimerChainTemplate(document)) return;
-    runHopBypass();
-  };
-  go();
-  if (document.readyState === 'loading') {
-    document.addEventListener('readystatechange', function onReady() {
-      if (document.readyState === 'loading') return;
-      document.removeEventListener('readystatechange', onReady);
-      go();
-    });
+async function runLinkjustUnlockFlow(): Promise<void> {
+  ensureOverlay(COPY.unlock);
+  requestVisibilitySpoof();
+  const ui = overlay ?? mountLinkjustOverlay();
+  const dest = await finishLinkjustUnlock(location.href, (sec) => ui.startCountdown(sec));
+  if (dest) {
+    goDestination(dest);
+    return;
   }
+  ui.setError(COPY.failed.detail);
+}
+
+async function runLinkjustShortenerFlow(): Promise<void> {
+  const alias = linkjustAliasFromUrl(location.href);
+  if (!alias) return;
+
+  ensureOverlay(isLinkjustUnlockPage() ? COPY.unlock : COPY.entry);
+
+  const apiDest = destinationFromLinkjustApiUrl(location.href);
+  if (apiDest) {
+    goDestination(apiDest);
+    return;
+  }
+
+  if (isLinkjustUnlockPage()) {
+    await runLinkjustUnlockFlow();
+    return;
+  }
+
+  await syncChain((chain) => {
+    if (chainNeedsReset(chain, alias)) return chainPayload(alias, null);
+    return chainPayload(alias, chain);
+  });
+  rememberLinkjustAlias(alias);
+
+  const hop = await fetchLinkjustFirstHop(alias, cachedChain.shortenerHost ?? 'linkjust.com');
+  if (hop) {
+    go(hop, COPY.entry);
+    return;
+  }
+
+  overlay?.setError(COPY.failed.detail);
+}
+
+async function runLinkjustArticleFlow(): Promise<void> {
+  await syncChain((chain) => markArticleVisited(chain));
+  const alias = resolveAlias();
+  if (alias && chainNeedsReset(cachedChain, alias)) {
+    await syncChain(() => chainPayload(alias, null));
+  } else if (alias) {
+    cachedChain = chainPayload(alias, cachedChain);
+    await writeLinkjustChain(cachedChain);
+  }
+  runHopLoop();
+}
+
+export function isLinkjustBypassHost(): boolean {
+  if (window !== window.top) return false;
+  try {
+    if (isLinkjustRootHost()) return true;
+    if (isLinkjustMediatorShell()) return true;
+    return Boolean(cachedChain.alias && !isLinkjustHost());
+  } catch {
+    return false;
+  }
+}
+
+async function runFlow(): Promise<void> {
+  if (flowRunning || navigating) return;
+
+  await syncChain();
+  if (!isLinkjustRootHost() && !isLinkjustMediatorShell() && !cachedChain.alias) return;
+
+  flowRunning = true;
+  try {
+    if (isLinkjustRootHost()) {
+      await runLinkjustShortenerFlow();
+      return;
+    }
+    if (isLinkjustMediatorShell() || cachedChain.alias) {
+      await runLinkjustArticleFlow();
+    }
+  } finally {
+    flowRunning = false;
+  }
+}
+
+function bootOverlay(): void {
+  if (readOverlaySession()) {
+    overlay = restoreOverlayFromSession();
+    return;
+  }
+  if (isLinkjustRootHost()) {
+    ensureOverlay(isLinkjustUnlockPage() ? COPY.unlock : COPY.entry);
+    return;
+  }
+  if (isLinkjustMediatorShell()) ensureOverlay(COPY.article);
+}
+
+export function initLinkjustTimerChainBypass(): void {
+  if (window !== window.top) return;
+
+  if (isLinkjustRootHost() || isLinkjustMediatorShell() || readOverlaySession()) {
+    bootOverlay();
+    requestVisibilitySpoof();
+  }
+
+  void readLinkjustChain().then((chain) => {
+    cachedChain = chain;
+    if (chain.alias && isLinkjustMediatorShell()) {
+      bootOverlay();
+      requestVisibilitySpoof();
+    }
+  });
+
+  const start = (): void => {
+    void runFlow();
+  };
+
+  whenDomParsed(start);
+  if (document.readyState !== 'loading') start();
 }

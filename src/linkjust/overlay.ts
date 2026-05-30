@@ -5,19 +5,20 @@ import {
 } from '../shared/bypass-overlay';
 
 const overlay = createBypassOverlay({
-  id: 'skip-wait-cut4money-overlay',
-  activeClass: 'sw-cut4money-active',
-  sessionKey: 'sw-cut4money-overlay',
-  brand: 'Skip Wait',
+  id: 'skip-wait-linkjust-overlay',
+  activeClass: 'sw-linkjust-active',
+  sessionKey: 'sw-linkjust-overlay',
+  brand: 'Skip Wait · Linkjust',
+  countdownLabel: 'seconds left on timer',
 });
 
 export type OverlayCopy = BypassOverlayCopy;
-export type Cut4MoneyOverlay = BypassOverlay;
+export type LinkjustOverlay = BypassOverlay;
 
 export const {
   readOverlaySession,
   persistOverlaySession,
   clearOverlaySession,
   restoreOverlayFromSession,
-  mountOverlay: mountCut4MoneyOverlay,
+  mountOverlay: mountLinkjustOverlay,
 } = overlay;
