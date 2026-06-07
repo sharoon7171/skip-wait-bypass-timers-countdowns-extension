@@ -9,7 +9,8 @@ export async function writeExtensionEnabled(enabled: boolean): Promise<void> {
   await chrome.storage.local.set({ [EXTENSION_ENABLED_STORAGE_KEY]: enabled });
 }
 
-let cachedEnabled = true;
+let cacheReady = false;
+let cachedEnabled = false;
 
 function applyActionBadge(enabled: boolean): void {
   if (typeof chrome === 'undefined' || !chrome.action?.setBadgeText) return;
@@ -21,15 +22,25 @@ function applyActionBadge(enabled: boolean): void {
 export function initExtensionEnabledCache(): void {
   void chrome.storage.local.get(EXTENSION_ENABLED_STORAGE_KEY).then((v) => {
     cachedEnabled = v[EXTENSION_ENABLED_STORAGE_KEY] !== false;
+    cacheReady = true;
     applyActionBadge(cachedEnabled);
   });
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local' || !changes[EXTENSION_ENABLED_STORAGE_KEY]) return;
     cachedEnabled = changes[EXTENSION_ENABLED_STORAGE_KEY].newValue !== false;
+    cacheReady = true;
     applyActionBadge(cachedEnabled);
   });
 }
 
 export function isExtensionEnabledSync(): boolean {
-  return cachedEnabled;
+  return cacheReady && cachedEnabled;
+}
+
+export function watchExtensionEnabledToggleReload(): void {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes[EXTENSION_ENABLED_STORAGE_KEY]) return;
+    if (window !== window.top) return;
+    location.reload();
+  });
 }

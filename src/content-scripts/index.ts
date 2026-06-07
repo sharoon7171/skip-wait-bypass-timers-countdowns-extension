@@ -1,5 +1,5 @@
 import { bootstrapRemoteDomains } from '../utils/remote-domains';
-import { readExtensionEnabled } from '../utils/extension-enabled';
+import { readExtensionEnabled, watchExtensionEnabledToggleReload } from '../utils/extension-enabled';
 import { initFourDownloadDirectLinks } from './4download-direct-links';
 import { initXdmoviesDownloadLink } from './xdmovies-download-link';
 import { initXdmoviesLanding } from './xdmovies-landing';
@@ -43,12 +43,15 @@ import { initUsersdriveAutomation } from './usersdrive-countdown-bypass';
 import { initWpSafelinkRedirect } from './wp-safelink-redirect';
 
 const INITS = [
+  initArolinksBypass,
+  initCut4MoneyBypass,
+  initLinkjust,
+  initShortxlinksSafelinkChain,
   initAdlinkClickVerifyPoll,
   initAdlinkflyLinksGo,
   initFourDownloadDirectLinks,
   initXdmoviesLanding,
   initXdmoviesDownloadLink,
-  initLinkjust,
   initMoviesModContentScript,
   initUhdmoviesCloudContentScript,
   initAdlinkflyTokenPayload,
@@ -80,39 +83,24 @@ const INITS = [
 
 const isExtensionContext = typeof chrome !== 'undefined' && !!chrome.runtime?.id;
 
-function bootCut4MoneyBypass(): void {
-  if (!isExtensionContext || window !== window.top) return;
-  initArolinksBypass();
-  initCut4MoneyBypass();
-}
-
-bootCut4MoneyBypass();
-
-function bootLinkjustBypass(): void {
-  if (!isExtensionContext || window !== window.top) return;
-  initLinkjust();
-}
-
-bootLinkjustBypass();
-
-async function runWhenEnabled(): Promise<void> {
+async function boot(): Promise<void> {
   if (!isExtensionContext) {
     runCoomeetMainWorldAccelerator();
     return;
   }
+  watchExtensionEnabledToggleReload();
   if (!(await readExtensionEnabled())) return;
   if (isOnCoomeetIframeHost()) {
     initCoomeetIframeBootstrap();
-  } else if (window === window.top) {
-    initShortxlinksSafelinkChain();
-    void bootstrapRemoteDomains().then(() => {
-      for (const init of INITS) {
-        try {
-          init();
-        } catch {}
-      }
-    });
+    return;
+  }
+  if (window !== window.top) return;
+  await bootstrapRemoteDomains();
+  for (const init of INITS) {
+    try {
+      init();
+    } catch {}
   }
 }
 
-void runWhenEnabled();
+void boot();
