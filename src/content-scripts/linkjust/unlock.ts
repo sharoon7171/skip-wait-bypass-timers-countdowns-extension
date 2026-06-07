@@ -2,7 +2,7 @@ import {
   linksGoFormFromHtml,
   postLinksGo,
   revealTimerLinks,
-} from '../shared/arolinks-page';
+} from '../arolinks/page';
 import { isLinkjustHost } from './hosts';
 
 const UNLOCK_MARKERS =

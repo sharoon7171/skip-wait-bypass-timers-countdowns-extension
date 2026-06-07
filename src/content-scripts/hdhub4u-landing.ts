@@ -8,7 +8,7 @@ const hourlySeed = (): number => {
   return n.getFullYear() * 1e6 + (n.getMonth() + 1) * 1e4 + n.getDate() * 100 + n.getHours() + 1;
 };
 
-export function initHdhub4uLandingRedirect(): void {
+export function initHdhub4uLanding(): void {
   if (!isAllowedHost(getHostsByKey(KEY))) return;
   fetch(`https://cdn.hub4u.cloud/host/?v=${hourlySeed()}`)
     .then((r) => (r.ok ? r.json() : null))

@@ -1,6 +1,6 @@
 import { isAllowedHost } from '../utils/domain-check';
 import { getHostsByKey } from '../utils/remote-domains';
-import { SKIPWAIT_CARD_STYLES } from '../utils/skipwait-card-styles';
+import { cardButton, createInlineCard } from '../injected-ui/card';
 
 const KEY = 'cookiesceo-copy';
 const CARD_ID = 'skipwait-cookiesceo-card';
@@ -31,23 +31,19 @@ async function run(): Promise<void> {
   const btn = document.getElementById('download-btn');
   if (!btn?.parentElement || document.getElementById(CARD_ID)) return;
 
-  const container = btn.parentElement;
-  const s = SKIPWAIT_CARD_STYLES;
-  const card = document.createElement('div');
-  card.id = CARD_ID;
-  card.setAttribute('style', s.card);
-  card.innerHTML = [
-    `<div style="${s.badge}">Skip Wait</div>`,
-    `<h3 style="${s.title}">Cookies ready</h3>`,
-    `<p style="${s.description}">Timer skipped. Cookie loaded by the extension - copy below, no redirect.</p>`,
-    `<p style="${s.status}" id="skipwait-status">Fetching…</p>`,
-    `<button type="button" style="${s.btn};display:none" id="skipwait-copy">Copy cookie</button>`,
-  ].join('');
-  container.appendChild(card);
-  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const card = createInlineCard({
+    id: CARD_ID,
+    badge: 'Skip Wait',
+    title: 'Cookies ready',
+    description: 'Timer skipped. Cookie loaded by the extension - copy below, no redirect.',
+    status: 'Fetching…',
+    actionsHtml: cardButton('skipwait-copy', 'Copy cookie'),
+  });
+  card.button('skipwait-copy')!.style.display = 'none';
+  btn.parentElement.appendChild(card.root);
+  card.root.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-  const status = document.getElementById('skipwait-status')!;
-  const copyBtn = document.getElementById('skipwait-copy') as HTMLButtonElement;
+  const copyBtn = card.button('skipwait-copy')!;
   let cookieText: string | null = null;
 
   copyBtn.onclick = async () => {
@@ -63,8 +59,7 @@ async function run(): Promise<void> {
 
   const url = getDownloadUrl();
   if (!url) {
-    status.setAttribute('style', s.statusError);
-    status.textContent = 'Download URL not found.';
+    card.setStatus('Download URL not found.', 'error');
     return;
   }
 
@@ -73,16 +68,13 @@ async function run(): Promise<void> {
     const html = await res.text();
     cookieText = extractCookie(html);
     if (cookieText) {
-      status.setAttribute('style', s.statusSuccess);
-      status.textContent = 'Ready. Click the button to copy.';
+      card.setStatus('Ready. Click the button to copy.', 'success');
       copyBtn.style.display = 'inline-flex';
     } else {
-      status.setAttribute('style', s.statusError);
-      status.textContent = 'Cookie not found on download page.';
+      card.setStatus('Cookie not found on download page.', 'error');
     }
   } catch {
-    status.setAttribute('style', s.statusError);
-    status.textContent = 'Failed to fetch cookie.';
+    card.setStatus('Failed to fetch cookie.', 'error');
   }
 }
 

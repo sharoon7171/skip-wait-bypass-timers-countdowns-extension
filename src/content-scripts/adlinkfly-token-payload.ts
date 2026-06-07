@@ -46,7 +46,7 @@ function tick(): void {
   if (!done) requestAnimationFrame(tick);
 }
 
-export function initAdlinkflyTokenPayloadRedirect(): void {
+export function initAdlinkflyTokenPayload(): void {
   if (!isAllowedHost(getHostsByKey(KEY))) return;
   const run = () => requestAnimationFrame(tick);
   if (document.readyState === 'loading') {

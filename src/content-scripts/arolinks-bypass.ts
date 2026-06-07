@@ -12,8 +12,8 @@ import {
   writeArolinksChain,
   writePendingUnlock,
   type ArolinksChain,
-} from '../shared/arolinks-chain';
-import { MSG_ARO_GUARD_OFF, MSG_ARO_GUARD_ON } from '../shared/arolinks-guard-messages';
+} from './arolinks/chain';
+import { MSG_ARO_GUARD_OFF, MSG_ARO_GUARD_ON } from './arolinks/guard-messages';
 import {
   deltaUrlFromDom,
   deltaUrlFromHtml,
@@ -26,22 +26,12 @@ import {
   postLinksGo,
   renderArolinksTimerPage,
   revealTimerLinks,
-} from '../shared/arolinks-page';
+} from './arolinks/page';
+import { mountArolinksOverlay } from '../injected-ui/presets';
+import type { BypassOverlay } from '../injected-ui/overlay';
 
 const KEY = 'arolinks-bypass';
 const LOCAL_HOSTS = ['arolinks.com', 'deltastudy.site'] as const;
-const OVERLAY_ID = 'skip-wait-arolinks-overlay';
-const PAGE_LOCK_ID = 'skip-wait-arolinks-page-lock';
-const PAGE_BLOCK_EVENTS = [
-  'click',
-  'mousedown',
-  'mouseup',
-  'touchstart',
-  'touchend',
-  'wheel',
-  'keydown',
-  'contextmenu',
-] as const;
 const ARO_FIRST_REDIRECT_KEY = 'sw-aro-first-redirect';
 const BYPASS_COOKIES = [
   { name: 'adcadg', value: 'insurance,online_colleges,study_abroad,finance,loan' },
@@ -60,14 +50,6 @@ let navigating = false;
 let linksGoPosted = false;
 let lastFlowKey = '';
 let unlockVisitActive = false;
-
-type Overlay = {
-  setPhase: (title: string, detail: string) => void;
-  setDetail: (detail: string) => void;
-  startCountdown: (seconds: number, detail?: string, finishingLabel?: string) => void;
-  setError: (message: string | null) => void;
-  remove: () => void;
-};
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -167,109 +149,6 @@ function resolveAlias(): string | null {
   return arolinksAliasFromLocation(location.href) ?? fromUrl() ?? fromHtml();
 }
 
-function lockPage(): void {
-  if (!document.getElementById(PAGE_LOCK_ID)) {
-    const lock = document.createElement('style');
-    lock.id = PAGE_LOCK_ID;
-    lock.textContent =
-      'html,body{overflow:hidden!important;touch-action:none!important;user-select:none!important;-webkit-user-select:none!important}';
-    document.documentElement.appendChild(lock);
-  }
-}
-
-function unlockPage(): void {
-  document.getElementById(PAGE_LOCK_ID)?.remove();
-}
-
-function mountOverlay(): Overlay {
-  lockPage();
-  let root = document.getElementById(OVERLAY_ID);
-  if (!root) {
-    root = document.createElement('div');
-    root.id = OVERLAY_ID;
-    root.innerHTML =
-      '<div style="position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.9);font-family:system-ui,sans-serif;color:#f8fafc;pointer-events:auto;user-select:none;-webkit-user-select:none;touch-action:none;overscroll-behavior:contain;cursor:default;-webkit-tap-highlight-color:transparent">' +
-      '<div style="min-width:280px;max-width:400px;padding:28px 32px;border-radius:16px;background:#1e293b;border:1px solid rgba(148,163,184,.25);text-align:center;pointer-events:none">' +
-      '<div style="font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:6px">Skip Wait</div>' +
-      '<div class="sw-phase" style="font-size:1.15rem;font-weight:600;color:#f1f5f9;margin-bottom:4px"></div>' +
-      '<div class="sw-detail" style="font-size:.875rem;color:#94a3b8;margin-bottom:16px;min-height:1.25rem"></div>' +
-      '<div class="sw-countdown" style="font-size:3rem;font-weight:700;line-height:1;color:#38bdf8;font-variant-numeric:tabular-nums;margin-bottom:4px;display:none"></div>' +
-      '<div class="sw-countdown-label" style="font-size:.8rem;color:#64748b;margin-bottom:12px;display:none">seconds remaining</div>' +
-      '<div class="sw-err" style="display:none;font-size:.85rem;color:#fca5a5;line-height:1.4"></div>' +
-      '</div></div>';
-    for (const type of PAGE_BLOCK_EVENTS) {
-      root.addEventListener(
-        type,
-        (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        },
-        true,
-      );
-    }
-    document.documentElement.appendChild(root);
-  }
-  const phase = root.querySelector<HTMLElement>('.sw-phase')!;
-  const detail = root.querySelector<HTMLElement>('.sw-detail')!;
-  const countdown = root.querySelector<HTMLElement>('.sw-countdown')!;
-  const countdownLabel = root.querySelector<HTMLElement>('.sw-countdown-label')!;
-  const err = root.querySelector<HTMLElement>('.sw-err')!;
-  let tickId = 0;
-
-  const stopCountdown = (): void => {
-    if (tickId) {
-      clearInterval(tickId);
-      tickId = 0;
-    }
-    countdown.style.display = 'none';
-    countdownLabel.style.display = 'none';
-  };
-
-  return {
-    setPhase(title: string, detailText: string) {
-      stopCountdown();
-      phase.textContent = title;
-      detail.textContent = detailText;
-      err.style.display = 'none';
-    },
-    setDetail(detailText: string) {
-      detail.textContent = detailText;
-    },
-    startCountdown(seconds: number, detailText?: string, finishingLabel = 'Finishing…') {
-      stopCountdown();
-      if (detailText) detail.textContent = detailText;
-      let left = Math.max(0, Math.ceil(seconds));
-      countdown.style.display = 'block';
-      countdownLabel.style.display = 'block';
-      countdownLabel.textContent = 'seconds remaining';
-      const paint = (): void => {
-        countdown.textContent = String(left);
-      };
-      paint();
-      tickId = window.setInterval(() => {
-        left -= 1;
-        if (left <= 0) {
-          clearInterval(tickId);
-          tickId = 0;
-          countdown.textContent = '0';
-          countdownLabel.textContent = finishingLabel;
-          return;
-        }
-        paint();
-      }, 1000);
-    },
-    setError(message: string | null) {
-      stopCountdown();
-      err.textContent = message ?? '';
-      err.style.display = message ? 'block' : 'none';
-    },
-    remove() {
-      stopCountdown();
-      root.remove();
-    },
-  };
-}
-
 async function unlockPhase(alias: string, chain: ArolinksChain): Promise<boolean> {
   return (
     chain.phase === 'unlock' &&
@@ -336,10 +215,10 @@ function triggerVerify(): void {
   if (btn instanceof HTMLElement) btn.click();
 }
 
-async function completeMediatorArticle(ui: Overlay): Promise<void> {
+async function completeMediatorArticle(ui: BypassOverlay): Promise<void> {
   chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
   seedMediatorCookies();
-  ui.startCountdown(VERIFY_WAIT_SEC, undefined, 'Finishing verification…');
+  void ui.startCountdown(VERIFY_WAIT_SEC, 'Finishing verification…');
   const end = Date.now() + VERIFY_WAIT_MS;
   while (Date.now() < end) {
     const cd = document.getElementById('countdown');
@@ -357,7 +236,7 @@ async function completeMediatorArticle(ui: Overlay): Promise<void> {
 function openDestination(url: string): void {
   if (navigating) return;
   navigating = true;
-  unlockPage();
+  mountArolinksOverlay().releasePage();
   void clearPendingUnlock();
   guardOff();
   void clearArolinksChain();
@@ -384,7 +263,7 @@ async function loadTimerShellOnPage(
   try {
     const html = await fetchArolinksAliasPage(alias, referer);
     if (!isArolinksTimerShell(html)) return false;
-    mountOverlay().remove();
+    mountArolinksOverlay().remove();
     renderArolinksTimerPage(html);
     await sleep(200);
     const dest = await unlockDestination(html, aroUrl);
@@ -402,14 +281,14 @@ async function loadTimerShellOnPage(
 async function runUnlockVisit(alias: string, chain: ArolinksChain): Promise<void> {
   if (unlockVisitActive) return;
   unlockVisitActive = true;
-  const ui = mountOverlay();
+  const ui = mountArolinksOverlay();
   try {
     linksGoPosted = false;
     const referer = await refererForUnlock(chain);
     if (!referer) {
       ui.setPhase('Almost there', 'Complete the verification steps on the previous page.');
       ui.setError('Return to the article page and wait for verification to finish.');
-      unlockPage();
+      mountArolinksOverlay().releasePage();
       return;
     }
     const aroUrl = `https://arolinks.com/${alias}`;
@@ -437,7 +316,7 @@ async function runUnlockVisit(alias: string, chain: ArolinksChain): Promise<void
 
     ui.setPhase('Could not open link', 'The download page did not load in time.');
     ui.setError('Reload the same arolinks URL in this tab after finishing all verification steps.');
-    unlockPage();
+    mountArolinksOverlay().releasePage();
   } finally {
     unlockVisitActive = false;
   }
@@ -495,7 +374,7 @@ async function readmoreTargets(articleUrl: string): Promise<string[]> {
   }
 }
 
-async function followLanding(ui: Overlay): Promise<void> {
+async function followLanding(ui: BypassOverlay): Promise<void> {
   ui.setPhase('Loading article', 'Opening the verification page…');
   const end = Date.now() + LANDING_POLL_MS;
   while (Date.now() < end) {
@@ -515,7 +394,7 @@ async function goToArolinksUnlock(
   chain: ArolinksChain,
   articleUrl: string,
   nextHop: number,
-  ui: Overlay,
+  ui: BypassOverlay,
   verified: boolean,
 ): Promise<void> {
   ui.setPhase('Almost done', 'Returning to your download link…');
@@ -533,7 +412,7 @@ async function goToArolinksUnlock(
 async function runReadmoreHop(
   chain: ArolinksChain,
   alias: string,
-  ui: Overlay,
+  ui: BypassOverlay,
 ): Promise<void> {
   const articleUrl = location.href;
   const nextHop = chain.hops + 1;
@@ -577,7 +456,7 @@ async function runReadmoreHop(
 }
 
 async function runMediatorFlow(chain: ArolinksChain, alias: string): Promise<void> {
-  const ui = mountOverlay();
+  const ui = mountArolinksOverlay();
   seedMediatorCookies();
 
   if (chain.phase === 'unlock' && isMediatorArticle()) {
@@ -614,7 +493,7 @@ async function runArolinksFlow(): Promise<void> {
       await runUnlockVisit(alias, chain);
       return;
     }
-    mountOverlay().setPhase(
+    mountArolinksOverlay().setPhase(
       'Starting verification',
       'You will be redirected to complete a few quick steps.',
     );
@@ -630,7 +509,7 @@ async function runArolinksFlow(): Promise<void> {
   }
 
   if (isArolinksTimerShell()) {
-    mountOverlay().remove();
+    mountArolinksOverlay().remove();
     guardOff();
     revealTimerLinks();
     const direct = deltaUrlFromDom();

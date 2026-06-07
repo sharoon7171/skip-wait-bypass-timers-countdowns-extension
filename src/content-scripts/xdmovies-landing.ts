@@ -27,7 +27,7 @@ function pickDestination(html: string): string | null {
   return best;
 }
 
-export function initXdmoviesLandingRedirect(): void {
+export function initXdmoviesLanding(): void {
   if (window !== window.top) return;
   if (!isAllowedHost(getHostsByKey(KEY))) return;
   fetch(location.href, { credentials: 'omit' })

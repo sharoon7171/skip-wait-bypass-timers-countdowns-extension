@@ -11,7 +11,7 @@ import {
   writeCut4MoneyChain,
   writePendingUnlock,
   type Cut4MoneyChain,
-} from '../cut4money/cut4money-chain';
+} from './cut4money/chain';
 import {
   DEFAULT_SHORTENER_HOSTS,
   isShortenerHost,
@@ -19,25 +19,25 @@ import {
   isShortenerReferer,
   shortenerAliasFromUrl,
   shortenerUrl,
-} from '../cut4money/hosts';
+} from './cut4money/hosts';
 import {
   aliasFromMediatorQuery,
   isMediatorShell,
   shortenerAliasFromHtml,
-} from '../cut4money/mediator';
+} from './cut4money/mediator';
 import {
-  clearOverlaySession,
+  clearCut4MoneyOverlaySession,
   mountCut4MoneyOverlay,
-  persistOverlaySession,
-  readOverlaySession,
-  restoreOverlayFromSession,
+  persistCut4MoneyOverlaySession,
+  readCut4MoneyOverlaySession,
+  restoreCut4MoneyOverlayFromSession,
   type Cut4MoneyOverlay,
-} from '../cut4money/overlay';
+} from '../injected-ui/presets';
 import {
   fetchShortenerFirstHop,
   finishV2linksInterstitial,
   isV2linksInterstitial,
-} from '../cut4money/v2links-api';
+} from './cut4money/links-api';
 
 const REMOTE_DOMAINS_KEY = 'cut4money-bypass';
 
@@ -132,7 +132,7 @@ function rememberAlias(alias: string): void {
 }
 
 function ui(): Cut4MoneyOverlay {
-  return restoreOverlayFromSession() ?? mountCut4MoneyOverlay();
+  return restoreCut4MoneyOverlayFromSession() ?? mountCut4MoneyOverlay();
 }
 
 function show(ui: Cut4MoneyOverlay, title: string, detail: string): void {
@@ -141,7 +141,7 @@ function show(ui: Cut4MoneyOverlay, title: string, detail: string): void {
 
 function navigate(url: string, title: string, detail: string): void {
   navigating = true;
-  persistOverlaySession({ title, detail });
+  persistCut4MoneyOverlaySession({ title, detail });
   show(ui(), title, detail);
   window.location.replace(url);
 }
@@ -177,7 +177,7 @@ function openDestination(url: string): void {
   show(ui(), COPY.destination.title, COPY.destination.detail);
   void writePendingUnlock(null);
   void clearCut4MoneyChain();
-  clearOverlaySession();
+  clearCut4MoneyOverlaySession();
   window.location.replace(url);
 }
 
@@ -311,8 +311,8 @@ export function initCut4MoneyBypass(): void {
 
   const aliasOnShortener =
     isShortenerRootHost() && shortenerAliasFromUrl(location.href);
-  if (aliasOnShortener || isMediatorShell() || readOverlaySession()) {
-    restoreOverlayFromSession();
+  if (aliasOnShortener || isMediatorShell() || readCut4MoneyOverlaySession()) {
+    restoreCut4MoneyOverlayFromSession();
     requestVisibilitySpoof();
   }
 
@@ -323,8 +323,8 @@ export function initCut4MoneyBypass(): void {
       chainPayload(alias, null, { phase: 'mediators', lastArticleUrl: null }, host),
     );
     rememberAlias(alias);
-    if (!readOverlaySession()) {
-      persistOverlaySession(COPY.start);
+    if (!readCut4MoneyOverlaySession()) {
+      persistCut4MoneyOverlaySession(COPY.start);
       mountCut4MoneyOverlay().setPhase(COPY.start.title, COPY.start.detail);
     }
   }

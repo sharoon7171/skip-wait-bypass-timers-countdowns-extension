@@ -1,5 +1,5 @@
-import { hostnameMatches } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
+import { hostnameMatches } from '../../utils/domain-check';
+import { getHostsByKey } from '../../utils/remote-domains';
 
 const KEY = 'linkjust';
 const FALLBACK_ROOTS = ['linkjust.com'] as const;

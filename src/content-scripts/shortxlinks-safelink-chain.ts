@@ -5,12 +5,12 @@ import {
   SHORTX_FETCH_CHAIN,
   shortxResultKey,
   type ShortxFetchResult,
-} from '../shared/shortx-fetch-chain';
+} from './shortxlinks-chain';
+import { createProgressOverlay, type ProgressOverlay } from '../injected-ui/progress-overlay';
 
 const KEY = 'shortxlinks-safelink-chain';
 const LOCAL_HOSTS = ['shortxlinks.com', 'flexthecar.com', 'nkrmusic.in.net'] as const;
 const OVERLAY_ID = 'skip-wait-shortx-overlay';
-const PAGE_LOCK_ID = 'skip-wait-shortx-page-lock';
 const AD_WAIT_MS = 22_000;
 const UNLOCK_POLL_MS = 250;
 const SESSION_START = 'sw-shortx-start-url';
@@ -18,14 +18,8 @@ const SESSION_TOKEN = 'sw-shortx-token-url';
 const SESSION_AD_TIME = 'sw-shortx-ad-time';
 
 type StoredResult = { tokenUrl: string; adTime: number };
-type OverlayUi = {
-  setStatus: (t: string) => void;
-  setError: (t: string | null) => void;
-  startCountdown: (endTs: number) => void;
-  stopCountdown: () => void;
-};
 
-let overlay: OverlayUi | null = null;
+let overlay: ProgressOverlay | null = null;
 let flowRunning = false;
 let flowStarted = false;
 
@@ -151,90 +145,16 @@ function shouldRun(): boolean {
   return inChain;
 }
 
-function overlayCss(): string {
-  const o = OVERLAY_ID;
-  return `#${o}{position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;background:rgba(15,23,42,.86);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#f8fafc;pointer-events:auto;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;cursor:default;overscroll-behavior:contain;touch-action:none}#${o} *{user-select:none;-webkit-user-select:none;pointer-events:none}#${o} .sw-card{max-width:420px;width:100%;border-radius:16px;padding:22px;background:linear-gradient(145deg,#1e293b 0%,#0f172a 100%);border:1px solid rgba(148,163,184,.25);box-shadow:0 25px 50px -12px rgba(0,0,0,.5)}#${o} .sw-brand{font-size:1.25rem;font-weight:700;color:#38bdf8;margin-bottom:6px}#${o} .sw-note{font-size:.875rem;line-height:1.55;color:#cbd5e1;margin-bottom:14px}#${o} .sw-note strong{color:#e2e8f0;font-weight:600}#${o} .sw-status{font-size:.9rem;color:#e2e8f0;min-height:1.4em;margin-bottom:10px}#${o} .sw-count{font-size:2.5rem;font-weight:700;font-variant-numeric:tabular-nums;color:#f1f5f9;text-align:center;margin:6px 0 4px}#${o} .sw-count-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;text-align:center;margin-top:4px}#${o} .sw-err{font-size:.85rem;color:#fca5a5;margin-top:10px;line-height:1.45}`;
-}
-
-function lockPage(): void {
-  if (!document.getElementById(PAGE_LOCK_ID)) {
-    const lock = document.createElement('style');
-    lock.id = PAGE_LOCK_ID;
-    lock.textContent =
-      'html,body{overflow:hidden!important;touch-action:none!important;user-select:none!important;-webkit-user-select:none!important}';
-    document.documentElement.appendChild(lock);
-  }
-  chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
-}
-
-function mountOverlay(): OverlayUi {
+function mountOverlay(): ProgressOverlay {
   if (overlay) return overlay;
-  lockPage();
-  document.querySelectorAll(`#${OVERLAY_ID}`).forEach((node, index) => {
-    if (index > 0) node.remove();
+  chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
+  overlay = createProgressOverlay({
+    id: OVERLAY_ID,
+    noteHtml:
+      '<strong>Hang tight — getting your link ready.</strong> You don\'t need to tap anything. We\'ll open your destination automatically.',
+    status: 'Verifying in the background…',
   });
-  let root = document.getElementById(OVERLAY_ID);
-  if (!root) {
-    root = document.createElement('div');
-    root.id = OVERLAY_ID;
-    const style = document.createElement('style');
-    style.textContent = overlayCss();
-    root.appendChild(style);
-    const card = document.createElement('div');
-    card.className = 'sw-card';
-    card.innerHTML =
-      '<div class="sw-brand">Skip Wait</div>' +
-      '<div class="sw-note"><strong>Hang tight — getting your link ready.</strong> You don\'t need to tap anything. We\'ll open your destination automatically.</div>' +
-      '<div class="sw-status">Verifying in the background…</div>' +
-      '<div class="sw-count" style="display:none"></div>' +
-      '<div class="sw-count-label" style="display:none">Your link opens in</div>' +
-      '<div class="sw-err" style="display:none"></div>';
-    root.appendChild(card);
-    document.documentElement.appendChild(root);
-    for (const type of ['click', 'mousedown', 'mouseup', 'touchstart', 'touchend', 'wheel', 'keydown'] as const) {
-      root.addEventListener(
-        type,
-        (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        },
-        true,
-      );
-    }
-  }
-  const status = root.querySelector<HTMLElement>('.sw-status')!;
-  const count = root.querySelector<HTMLElement>('.sw-count')!;
-  const countLabel = root.querySelector<HTMLElement>('.sw-count-label')!;
-  const err = root.querySelector<HTMLElement>('.sw-err')!;
-  let rafId = 0;
-  overlay = {
-    setStatus: (t: string) => {
-      status.textContent = t;
-    },
-    setError: (t: string | null) => {
-      err.textContent = t ?? '';
-      err.style.display = t ? 'block' : 'none';
-    },
-    startCountdown: (endTs: number) => {
-      countLabel.style.display = 'block';
-      count.style.display = 'block';
-      const tick = (): void => {
-        const left = endTs - Date.now();
-        count.textContent = `${(Math.max(0, left) / 1000).toFixed(2)} s`;
-        if (left <= 0) {
-          rafId = 0;
-          return;
-        }
-        rafId = requestAnimationFrame(tick);
-      };
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(tick);
-    },
-    stopCountdown: () => {
-      cancelAnimationFrame(rafId);
-      count.style.display = countLabel.style.display = 'none';
-    },
-  };
+  document.documentElement.appendChild(overlay.root);
   return overlay;
 }
 
@@ -265,7 +185,7 @@ async function requestFetchChain(startUrl: string): Promise<ShortxFetchResult> {
   return { ok: false, error: 'verification timed out' };
 }
 
-async function fetchVerification(startUrl: string, ui: OverlayUi): Promise<StoredResult | { ok: false; error: string }> {
+async function fetchVerification(startUrl: string, ui: ProgressOverlay): Promise<StoredResult | { ok: false; error: string }> {
   const stored = readStoredResult();
   if (stored) return stored;
   ui.setStatus('Running verification in the background…');
@@ -311,7 +231,7 @@ async function postLinksGo(): Promise<string | null> {
   }
 }
 
-async function finishOnTimerPage(ui: OverlayUi): Promise<boolean> {
+async function finishOnTimerPage(ui: ProgressOverlay): Promise<boolean> {
   ui.setStatus('Opening your destination…');
   let posted = false;
   for (let i = 0; i < 120; i++) {
@@ -338,7 +258,7 @@ async function finishOnTimerPage(ui: OverlayUi): Promise<boolean> {
   return false;
 }
 
-async function waitForUnlock(tokenUrl: string, adTime: number, ui: OverlayUi): Promise<void> {
+async function waitForUnlock(tokenUrl: string, adTime: number, ui: ProgressOverlay): Promise<void> {
   const endTs = adTime + AD_WAIT_MS;
   ui.setStatus('Waiting for your link to unlock…');
   ui.startCountdown(endTs);

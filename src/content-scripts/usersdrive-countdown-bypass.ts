@@ -1,12 +1,12 @@
 import { isAllowedHost } from '../utils/domain-check';
 import { getHostsByKey } from '../utils/remote-domains';
 import { isCloudflareHumanVerificationDone } from '../utils/cloudflare-verifier';
-import { SKIPWAIT_CARD_STYLES } from '../utils/skipwait-card-styles';
+import { createBannerOverlay } from '../injected-ui/banner-overlay';
 
 const KEY = 'usersdrive-countdown-bypass';
 const FORM_SELECTOR = 'form .cf-turnstile';
 const DIRECT_LINK_RE = /href\s*=\s*["']\s*(https?:\/\/[^"'\s]+\/[^"'\s]*\.[A-Za-z0-9]+)["'][^>]*>\s*(?:<[^>]*>\s*)*Click\s*To\s*Download/i;
-const Z = { backdrop: '2147483640', card: '2147483645', widget: '2147483646' };
+const Z = { widget: '2147483646' };
 
 function liftTurnstileWidget(): MutationObserver {
   const apply = (w: HTMLElement): void => {
@@ -23,29 +23,6 @@ function liftTurnstileWidget(): MutationObserver {
   });
   mo.observe(document.documentElement, { childList: true, subtree: true });
   return mo;
-}
-
-function createOverlay(): { error: (t: string) => void; info: (t: string) => void; success: (t: string) => void } {
-  const s = SKIPWAIT_CARD_STYLES;
-  const backdrop = document.createElement('div');
-  backdrop.setAttribute('style', `position:fixed;inset:0;z-index:${Z.backdrop};background:rgba(10,12,18,.55);backdrop-filter:blur(2px) saturate(.85);-webkit-backdrop-filter:blur(2px) saturate(.85);`);
-  const card = document.createElement('div');
-  card.setAttribute('style', `${s.card};position:fixed;top:max(env(safe-area-inset-top,0px),16px);left:50%;transform:translateX(-50%);max-width:min(440px,calc(100vw - 32px));z-index:${Z.card};margin:0;`);
-  card.innerHTML = `<div style="${s.badge}">Skip Wait</div><h2 style="${s.title}">Preparing your download</h2><p style="${s.description}">Cloudflare is verifying in the background. If a checkbox appears below, please tap it — everything else on the page is locked. Your file then starts automatically: no countdown, no second page.</p>`;
-  const status = document.createElement('p');
-  status.setAttribute('style', s.status);
-  status.textContent = 'Waiting for Cloudflare verification…';
-  card.appendChild(status);
-  document.body.append(backdrop, card);
-  const set = (t: string, css: string): void => {
-    status.textContent = t;
-    status.setAttribute('style', css);
-  };
-  return {
-    error: (t) => set(t, s.statusError),
-    info: (t) => set(t, s.status),
-    success: (t) => set(t, s.statusSuccess),
-  };
 }
 
 function waitForForm(): Promise<HTMLFormElement> {
@@ -94,14 +71,21 @@ function startDownload(url: string): void {
 
 async function run(): Promise<void> {
   const form = await waitForForm();
-  const overlay = createOverlay();
+  const overlay = createBannerOverlay({
+    id: 'skipwait-usersdrive-banner',
+    badge: 'Skip Wait',
+    title: 'Preparing your download',
+    description:
+      'Cloudflare is verifying in the background. If a checkbox appears below, please tap it — everything else on the page is locked. Your file then starts automatically: no countdown, no second page.',
+    status: 'Waiting for Cloudflare verification…',
+  });
   const lift = liftTurnstileWidget();
   await waitForCloudflareVerification(form);
   lift.disconnect();
-  overlay.info('Verification complete. Generating direct link…');
+  overlay.setStatus('Verification complete. Generating direct link…');
   const link = await fetchDirectLink(form);
-  if (!link) return overlay.error('Could not generate a direct link for this file.');
-  overlay.success('Your download has started. You can close this tab.');
+  if (!link) return overlay.setStatus('Could not generate a direct link for this file.', 'error');
+  overlay.setStatus('Your download has started. You can close this tab.', 'success');
   startDownload(link);
 }
 

@@ -1,12 +1,12 @@
 import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
-import { extractLinkjustHop, isFinalHop } from '../linkjust/extract-hop';
+import { extractLinkjustHop, isFinalHop } from './linkjust/extract-hop';
 import {
   destinationFromLinkjustApiUrl,
   fetchLinkjustFirstHop,
   isLinkjustHost,
   linkjustAliasFromUrl,
   linkjustRoots,
-} from '../linkjust/hosts';
+} from './linkjust/hosts';
 import {
   chainNeedsReset,
   clearLinkjustChain,
@@ -19,17 +19,17 @@ import {
   shortenerUnlockUrl,
   writeLinkjustChain,
   type LinkjustChain,
-} from '../linkjust/linkjust-chain';
-import { isLinkjustMediatorShell } from '../linkjust/mediator';
+} from './linkjust/chain';
+import { isLinkjustMediatorShell } from './linkjust/mediator';
 import {
-  clearOverlaySession,
+  clearLinkjustOverlaySession,
   mountLinkjustOverlay,
-  readOverlaySession,
-  restoreOverlayFromSession,
+  readLinkjustOverlaySession,
+  restoreLinkjustOverlayFromSession,
   type OverlayCopy,
-} from '../linkjust/overlay';
-import { dismissLinkjustAdblockOverlay, nudgeLinkjustTimerUi } from '../linkjust/timer-ui';
-import { finishLinkjustUnlock, isLinkjustUnlockPage } from '../linkjust/unlock';
+} from '../injected-ui/presets';
+import { dismissLinkjustAdblockOverlay, nudgeLinkjustTimerUi } from './linkjust/timer-ui';
+import { finishLinkjustUnlock, isLinkjustUnlockPage } from './linkjust/unlock';
 
 const COPY = {
   entry: {
@@ -65,7 +65,7 @@ let flowRunning = false;
 let navigating = false;
 let hopLoopRunning = false;
 let cachedChain: LinkjustChain = { ...EMPTY_LINKJUST_CHAIN };
-let overlay: ReturnType<typeof mountLinkjustOverlay> | null = restoreOverlayFromSession();
+let overlay: ReturnType<typeof mountLinkjustOverlay> | null = restoreLinkjustOverlayFromSession();
 
 function isLinkjustRootHost(): boolean {
   return isLinkjustHost() && isAllowedHost(linkjustRoots()) && !!linkjustAliasFromUrl(location.href);
@@ -105,7 +105,7 @@ function goDestination(url: string): void {
   navigating = true;
   ensureOverlay(COPY.destination);
   void clearLinkjustChain();
-  clearOverlaySession();
+  clearLinkjustOverlaySession();
   window.location.replace(url);
 }
 
@@ -299,8 +299,8 @@ async function runFlow(): Promise<void> {
 }
 
 function bootOverlay(): void {
-  if (readOverlaySession()) {
-    overlay = restoreOverlayFromSession();
+  if (readLinkjustOverlaySession()) {
+    overlay = restoreLinkjustOverlayFromSession();
     return;
   }
   if (isLinkjustRootHost()) {
@@ -310,10 +310,10 @@ function bootOverlay(): void {
   if (isLinkjustMediatorShell()) ensureOverlay(COPY.article);
 }
 
-export function initLinkjustTimerChainBypass(): void {
+export function initLinkjust(): void {
   if (window !== window.top) return;
 
-  if (isLinkjustRootHost() || isLinkjustMediatorShell() || readOverlaySession()) {
+  if (isLinkjustRootHost() || isLinkjustMediatorShell() || readLinkjustOverlaySession()) {
     bootOverlay();
     requestVisibilitySpoof();
   }

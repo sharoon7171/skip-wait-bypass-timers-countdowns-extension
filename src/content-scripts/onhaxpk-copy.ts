@@ -1,6 +1,6 @@
 import { isAllowedHost } from '../utils/domain-check';
 import { getHostsByKey } from '../utils/remote-domains';
-import { SKIPWAIT_CARD_STYLES } from '../utils/skipwait-card-styles';
+import { cardActionsRow, cardButton, createInlineCard } from '../injected-ui/card';
 
 const KEY = 'onhaxpk-copy';
 const CARD_ID = 'skipwait-onhax-card';
@@ -36,26 +36,22 @@ function run(): void {
   const insertAfter = timerEl?.closest('.elementor-section') ?? timerEl?.parentElement;
   if (!insertAfter?.parentNode) return;
 
-  const s = SKIPWAIT_CARD_STYLES;
-  const card = document.createElement('div');
-  card.id = CARD_ID;
-  card.setAttribute('style', s.card);
-  card.innerHTML = [
-    `<div style="${s.badge}">Skip Wait extension</div>`,
-    `<h3 style="${s.title}">Countdown bypassed - cookie ready</h3>`,
-    `<p style="${s.description}">This box was added by the <strong>Skip Wait</strong> extension. We skipped the countdown and loaded the cookie for you. Pick a format below and copy - no ads, no wait.</p>`,
-    `<p style="${s.status}" id="skipwait-onhax-status">Loading…</p>`,
-    `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">`,
-    `<button type="button" style="${s.btn}" id="skipwait-onhax-session" disabled>📋 Session share</button>`,
-    `<button type="button" style="${s.btn}" id="skipwait-onhax-editor" disabled>📋 Cookie Editor</button>`,
-    `</div>`,
-  ].join('');
-  insertAfter.parentNode.insertBefore(card, insertAfter.nextSibling);
-  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const card = createInlineCard({
+    id: CARD_ID,
+    badge: 'Skip Wait extension',
+    title: 'Countdown bypassed - cookie ready',
+    description:
+      'This box was added by the <strong>Skip Wait</strong> extension. We skipped the countdown and loaded the cookie for you. Pick a format below and copy - no ads, no wait.',
+    status: 'Loading…',
+    actionsHtml: cardActionsRow(
+      `${cardButton('skipwait-onhax-session', '📋 Session share', true)}${cardButton('skipwait-onhax-editor', '📋 Cookie Editor', true)}`,
+    ),
+  });
+  insertAfter.parentNode.insertBefore(card.root, insertAfter.nextSibling);
+  card.root.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-  const status = document.getElementById('skipwait-onhax-status')!;
-  const btnSession = document.getElementById('skipwait-onhax-session') as HTMLButtonElement;
-  const btnEditor = document.getElementById('skipwait-onhax-editor') as HTMLButtonElement;
+  const btnSession = card.button('skipwait-onhax-session')!;
+  const btnEditor = card.button('skipwait-onhax-editor')!;
 
   fetch(window.location.href, { cache: 'no-store', credentials: 'same-origin' })
     .then((r) => r.text())
@@ -64,18 +60,15 @@ function run(): void {
       bindCopy(btnSession, session, '📋 Session share');
       bindCopy(btnEditor, editor, '📋 Cookie Editor');
       if (session || editor) {
-        status.setAttribute('style', s.statusSuccess);
-        status.textContent = 'Cookie loaded by Skip Wait. Choose a format and click to copy.';
+        card.setStatus('Cookie loaded by Skip Wait. Choose a format and click to copy.', 'success');
       } else {
-        status.setAttribute('style', s.statusError);
-        status.textContent = 'Could not find cookies on page.';
+        card.setStatus('Could not find cookies on page.', 'error');
       }
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.root.scrollIntoView({ behavior: 'smooth', block: 'center' });
     })
     .catch(() => {
-      status.setAttribute('style', s.statusError);
-      status.textContent = 'Failed to load page.';
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.setStatus('Failed to load page.', 'error');
+      card.root.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
 }
 

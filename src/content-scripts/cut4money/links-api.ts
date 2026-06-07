@@ -1,4 +1,4 @@
-import { linksGoFormFromHtml, postLinksGo, revealTimerLinks } from '../shared/arolinks-page';
+import { linksGoFormFromHtml, postLinksGo, revealTimerLinks } from '../arolinks/page';
 import { shortenerUrl } from './hosts';
 
 function pageHtml(): string {

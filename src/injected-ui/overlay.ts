@@ -1,3 +1,5 @@
+import { pageUiColors, pageUiRadius, PAGE_UI_FONT } from './tokens';
+
 const BLOCKED_EVENTS = [
   'click',
   'mousedown',
@@ -25,6 +27,8 @@ export type BypassOverlay = {
   setDetail: (detail: string) => void;
   startCountdown: (seconds: number, finishingLabel?: string) => Promise<void>;
   setError: (message: string | null) => void;
+  releasePage: () => void;
+  remove: () => void;
 };
 
 export type BypassOverlayConfig = {
@@ -44,17 +48,9 @@ export type BypassOverlayApi = {
   mountOverlay: () => BypassOverlay;
 };
 
-export function createBypassOverlay(config: BypassOverlayConfig): BypassOverlayApi {
-  const {
-    id: overlayId,
-    activeClass: htmlActiveClass,
-    sessionKey: overlaySessionKey,
-    brand,
-    countdownLabel = 'seconds remaining',
-    countdownDoneMs = 400,
-  } = config;
-
-  const pageHideStyle = `
+function overlayStyles(overlayId: string, htmlActiveClass: string): string {
+  const c = pageUiColors;
+  return `
 html.${htmlActiveClass} body {
   overflow: hidden !important;
   touch-action: none !important;
@@ -71,7 +67,110 @@ html.${htmlActiveClass} body > *:not(#${overlayId}) {
   z-index: 2147483647 !important;
   isolation: isolate !important;
 }
+#${overlayId} .sw-backdrop {
+  position: fixed;
+  inset: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px,4vw,28px);
+  background: ${c.backdrop};
+  font-family: ${PAGE_UI_FONT};
+  color: ${c.textSecondary};
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  overscroll-behavior: contain;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+}
+#${overlayId} .sw-card {
+  box-sizing: border-box;
+  width: min(92vw,440px);
+  min-width: min(300px,92vw);
+  max-width: 440px;
+  padding: clamp(28px,5vw,36px) clamp(24px,5vw,40px);
+  border-radius: ${pageUiRadius.card};
+  background: ${c.cardGradient};
+  border: 1px solid ${c.cardBorder};
+  text-align: center;
+  pointer-events: none;
+  box-shadow: ${c.cardShadow};
+}
+#${overlayId} .sw-brand {
+  font-size: clamp(1rem,2.5vw,1.2rem);
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: ${c.accent};
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+#${overlayId} .sw-phase {
+  font-size: clamp(1.2rem,3vw,1.35rem);
+  font-weight: 600;
+  color: ${c.textPrimary};
+  margin-bottom: 8px;
+  line-height: 1.35;
+}
+#${overlayId} .sw-detail {
+  font-size: clamp(.9375rem,2.2vw,1rem);
+  color: ${c.textDetail};
+  line-height: 1.55;
+  min-height: 1.5rem;
+}
+#${overlayId} .sw-countdown {
+  display: none;
+  font-size: clamp(3.25rem,10vw,4rem);
+  font-weight: 700;
+  line-height: 1;
+  color: ${c.accent};
+  font-variant-numeric: tabular-nums;
+  margin: 16px 0 6px;
+}
+#${overlayId} .sw-countdown-label {
+  display: none;
+  font-size: .875rem;
+  color: ${c.textMuted};
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+#${overlayId} .sw-err {
+  display: none;
+  margin-top: 16px;
+  font-size: .9375rem;
+  color: ${c.error};
+  line-height: 1.45;
+}
 `;
+}
+
+function overlayMarkup(brand: string, countdownLabel: string): string {
+  return (
+    '<div class="sw-backdrop">' +
+    '<div class="sw-card">' +
+    `<div class="sw-brand">${brand}</div>` +
+    '<div class="sw-phase"></div>' +
+    '<div class="sw-detail"></div>' +
+    '<div class="sw-countdown"></div>' +
+    `<div class="sw-countdown-label">${countdownLabel}</div>` +
+    '<div class="sw-err"></div>' +
+    '</div></div>'
+  );
+}
+
+export function createBypassOverlay(config: BypassOverlayConfig): BypassOverlayApi {
+  const {
+    id: overlayId,
+    activeClass: htmlActiveClass,
+    sessionKey: overlaySessionKey,
+    brand,
+    countdownLabel = 'seconds remaining',
+    countdownDoneMs = 400,
+  } = config;
+
+  const pageHideStyle = overlayStyles(overlayId, htmlActiveClass);
 
   let keepOnTopObserver: MutationObserver | null = null;
   let countdownTickId = 0;
@@ -134,6 +233,23 @@ html.${htmlActiveClass} body > *:not(#${overlayId}) {
     return ui;
   }
 
+  function releasePageLock(): void {
+    document.getElementById(`${overlayId}-hide`)?.remove();
+    document.documentElement.classList.remove(htmlActiveClass);
+  }
+
+  function teardownOverlay(): void {
+    if (countdownTickId) {
+      clearInterval(countdownTickId);
+      countdownTickId = 0;
+    }
+    keepOnTopObserver?.disconnect();
+    keepOnTopObserver = null;
+    document.getElementById(overlayId)?.remove();
+    document.getElementById(`${overlayId}-hide`)?.remove();
+    document.documentElement.classList.remove(htmlActiveClass);
+  }
+
   function mountOverlay(): BypassOverlay {
     ensurePageHidden();
 
@@ -144,16 +260,7 @@ html.${htmlActiveClass} body > *:not(#${overlayId}) {
       root.setAttribute('role', 'dialog');
       root.setAttribute('aria-modal', 'true');
       root.setAttribute('aria-live', 'polite');
-      root.innerHTML =
-        '<div class="sw-backdrop" style="position:fixed;inset:0;box-sizing:border-box;display:flex;align-items:center;justify-content:center;padding:clamp(16px,4vw,28px);background:rgba(15,23,42,.94);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#f8fafc;pointer-events:auto;user-select:none;-webkit-user-select:none;touch-action:none;overscroll-behavior:contain;cursor:default;-webkit-tap-highlight-color:transparent">' +
-        '<div class="sw-card" style="box-sizing:border-box;width:min(92vw,440px);min-width:min(300px,92vw);max-width:440px;padding:clamp(28px,5vw,36px) clamp(24px,5vw,40px);border-radius:16px;background:linear-gradient(145deg,#1e293b 0%,#0f172a 100%);border:1px solid rgba(148,163,184,.25);text-align:center;pointer-events:none;box-shadow:0 25px 50px -12px rgba(0,0,0,.5)">' +
-        `<div class="sw-brand" style="font-size:clamp(1rem,2.5vw,1.2rem);font-weight:700;letter-spacing:-.02em;color:#38bdf8;margin-bottom:10px;line-height:1.3">${brand}</div>` +
-        '<div class="sw-phase" style="font-size:clamp(1.2rem,3vw,1.35rem);font-weight:600;color:#f1f5f9;margin-bottom:8px;line-height:1.35"></div>' +
-        '<div class="sw-detail" style="font-size:clamp(.9375rem,2.2vw,1rem);color:#cbd5e1;line-height:1.55;min-height:1.5rem"></div>' +
-        '<div class="sw-countdown" style="display:none;font-size:clamp(3.25rem,10vw,4rem);font-weight:700;line-height:1;color:#38bdf8;font-variant-numeric:tabular-nums;margin:16px 0 6px"></div>' +
-        `<div class="sw-countdown-label" style="display:none;font-size:.875rem;color:#94a3b8;margin-bottom:6px;line-height:1.4">${countdownLabel}</div>` +
-        '<div class="sw-err" style="display:none;margin-top:16px;font-size:.9375rem;color:#fca5a5;line-height:1.45"></div>' +
-        '</div></div>';
+      root.innerHTML = overlayMarkup(brand, countdownLabel);
       for (const type of BLOCKED_EVENTS) {
         root.addEventListener(type, blockEvent, true);
       }
@@ -226,6 +333,12 @@ html.${htmlActiveClass} body > *:not(#${overlayId}) {
         stopCountdown();
         err.textContent = message ?? '';
         err.style.display = message ? 'block' : 'none';
+      },
+      releasePage() {
+        releasePageLock();
+      },
+      remove() {
+        teardownOverlay();
       },
     };
   }

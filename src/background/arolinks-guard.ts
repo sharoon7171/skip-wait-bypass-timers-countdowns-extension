@@ -2,8 +2,8 @@ import { isExtensionEnabledSync } from '../utils/extension-enabled';
 import {
   installArolinksUnlockGuard,
   releaseArolinksUnlockGuard,
-} from '../shared/arolinks-guard-main';
-import { MSG_ARO_GUARD_OFF, MSG_ARO_GUARD_ON } from '../shared/arolinks-guard-messages';
+} from '../content-scripts/arolinks/unlock-guard';
+import { MSG_ARO_GUARD_OFF, MSG_ARO_GUARD_ON } from '../content-scripts/arolinks/guard-messages';
 
 function injectMainWorld(tabId: number, fn: () => void): void {
   void chrome.scripting

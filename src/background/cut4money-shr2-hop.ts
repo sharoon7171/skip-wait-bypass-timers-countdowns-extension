@@ -5,9 +5,9 @@ import {
   readPendingUnlock,
   writeCut4MoneyChain,
   type Cut4MoneyChain,
-} from '../cut4money/cut4money-chain';
-import { shortenerAliasFromUrl } from '../cut4money/hosts';
-import { fetchShortenerFirstHop } from '../cut4money/v2links-api';
+} from '../content-scripts/cut4money/chain';
+import { shortenerAliasFromUrl } from '../content-scripts/cut4money/hosts';
+import { fetchShortenerFirstHop } from '../content-scripts/cut4money/links-api';
 
 const skipTabIds = new Set<number>();
 const inflight = new Map<string, Promise<string | null>>();

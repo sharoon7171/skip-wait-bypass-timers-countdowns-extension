@@ -2,7 +2,7 @@ import { bootstrapRemoteDomains } from '../utils/remote-domains';
 import { readExtensionEnabled } from '../utils/extension-enabled';
 import { initFourDownloadDirectLinks } from './4download-direct-links';
 import { initXdmoviesDownloadLink } from './xdmovies-download-link';
-import { initXdmoviesLandingRedirect } from './xdmovies-landing-redirect';
+import { initXdmoviesLanding } from './xdmovies-landing';
 import {
   initCoomeetIframeBootstrap,
   isOnCoomeetIframeHost,
@@ -12,18 +12,18 @@ import { initAdlinkClickVerifyPoll } from './adlink-click-verify-poll';
 import { initArolinksBypass } from './arolinks-bypass';
 import { initCut4MoneyBypass } from './cut4money-bypass';
 import { initAdlinkflyLinksGo } from './adlinkfly-links-go';
-import { initAdlinkflyTokenPayloadRedirect } from './adlinkfly-token-payload-redirect';
+import { initAdlinkflyTokenPayload } from './adlinkfly-token-payload';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article';
 import { initUhdmoviesCloudContentScript } from './uhdmovies-cloud';
 import { initClipiRedirect } from './clipi-redirect';
 import { initCookiesceoCopy } from './cookiesceo-copy';
 import { initFastdlZipRedirect } from './fastdl-zip-redirect';
 import { initFclcRedirect } from './fclc-redirect';
-import { initHdhub4uLandingRedirect } from './hdhub4u-landing-redirect';
+import { initHdhub4uLanding } from './hdhub4u-landing';
 import { initHdhub4uTimerBypass } from './hdhub4u-timer-bypass';
 import { initHubcdnRedirect } from './hubcdn-redirect';
 import { initKitokolaDlGetBypass } from './kitokola-dl-get-bypass';
-import { initLinkjustTimerChainBypass } from './linkjust-timer-chain-bypass';
+import { initLinkjust } from './linkjust';
 import { initMoviesModContentScript } from './movies-mod';
 import { initHubcloudDrive } from './hubcloud-drive';
 import { initMultiup } from './multiup';
@@ -46,18 +46,18 @@ const INITS = [
   initAdlinkClickVerifyPoll,
   initAdlinkflyLinksGo,
   initFourDownloadDirectLinks,
-  initXdmoviesLandingRedirect,
+  initXdmoviesLanding,
   initXdmoviesDownloadLink,
-  initLinkjustTimerChainBypass,
+  initLinkjust,
   initMoviesModContentScript,
   initUhdmoviesCloudContentScript,
-  initAdlinkflyTokenPayloadRedirect,
+  initAdlinkflyTokenPayload,
   initBitcotasksReadArticle,
   initClipiRedirect,
   initCookiesceoCopy,
   initFastdlZipRedirect,
   initFclcRedirect,
-  initHdhub4uLandingRedirect,
+  initHdhub4uLanding,
   initHdhub4uTimerBypass,
   initHubcdnRedirect,
   initHubcloudDrive,
@@ -90,7 +90,7 @@ bootCut4MoneyBypass();
 
 function bootLinkjustBypass(): void {
   if (!isExtensionContext || window !== window.top) return;
-  initLinkjustTimerChainBypass();
+  initLinkjust();
 }
 
 bootLinkjustBypass();

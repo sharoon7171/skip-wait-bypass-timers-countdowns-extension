@@ -1,5 +1,6 @@
 import { isAllowedHost } from '../utils/domain-check';
 import { getHostsByKey } from '../utils/remote-domains';
+import { createProgressOverlay, turnstileWidgetCss, type ProgressOverlay } from '../injected-ui/progress-overlay';
 
 const KEY = 'xdmovies-download-link';
 const MSG_SOURCE = 'skip-wait-xdmovies';
@@ -42,80 +43,16 @@ async function xdmoviesFingerprint(): Promise<string> {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
 }
 
-function overlayCss(): string {
-  const o = OVERLAY_ID;
-  return `#${o}{position:fixed;inset:0;z-index:2147483646;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;background:rgba(15,23,42,.86);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#f8fafc;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;cursor:default;overscroll-behavior:contain}#${o} *{user-select:none;-webkit-user-select:none}#${o} .sw-card{max-width:420px;width:100%;border-radius:16px;padding:22px 22px;background:linear-gradient(145deg,#1e293b 0%,#0f172a 100%);border:1px solid rgba(148,163,184,.25);box-shadow:0 25px 50px -12px rgba(0,0,0,.5);pointer-events:none}#${o} .sw-brand{font-size:1.25rem;font-weight:700;letter-spacing:-.02em;color:#38bdf8;margin-bottom:6px}#${o} .sw-note{font-size:.875rem;line-height:1.55;color:#cbd5e1;margin-bottom:14px}#${o} .sw-note strong{color:#e2e8f0;font-weight:600}#${o} .sw-status{font-size:.9rem;color:#e2e8f0;min-height:1.4em;margin-bottom:10px}#${o} .sw-count{font-size:2.5rem;font-weight:700;font-variant-numeric:tabular-nums;color:#f1f5f9;text-align:center;margin:6px 0 4px}#${o} .sw-count-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;text-align:center}#${o} .sw-count-hint{font-size:.78rem;color:#94a3b8;text-align:center;margin-top:4px}#${o} .sw-err{font-size:.85rem;color:#fca5a5;margin-top:10px;line-height:1.45}#turnstileContainer,#turnstileWidget{position:fixed!important;left:50%!important;bottom:max(24px,env(safe-area-inset-bottom,0px))!important;top:auto!important;right:auto!important;transform:translateX(-50%)!important;z-index:2147483647!important;pointer-events:auto!important;display:block!important;visibility:visible!important;opacity:1!important;min-width:300px!important;min-height:65px!important;margin:0!important;padding:0!important;border-radius:8px!important;overflow:visible!important;box-shadow:0 12px 32px -10px rgba(0,0,0,.55)!important}#turnstileWidget iframe{pointer-events:auto!important}`;
-}
-
-function createOverlay() {
-  const root = document.createElement('div');
-  root.id = OVERLAY_ID;
-  const st = document.createElement('style');
-  st.textContent = overlayCss();
-  root.appendChild(st);
-  const card = document.createElement('div');
-  card.className = 'sw-card';
-  const brand = document.createElement('div');
-  brand.className = 'sw-brand';
-  brand.textContent = 'Skip Wait';
-  const note = document.createElement('div');
-  note.className = 'sw-note';
-  note.innerHTML =
-    '<strong>Hang tight — getting your download ready.</strong> You don’t need to tap anything on the page. We’ll open your link automatically when it’s done.';
-  const status = document.createElement('div');
-  status.className = 'sw-status';
-  status.textContent = 'Getting things ready…';
-  const count = document.createElement('div');
-  count.className = 'sw-count';
-  count.style.display = 'none';
-  const countLabel = document.createElement('div');
-  countLabel.className = 'sw-count-label';
-  countLabel.style.display = 'none';
-  const countHint = document.createElement('div');
-  countHint.className = 'sw-count-hint';
-  countHint.style.display = 'none';
-  const err = document.createElement('div');
-  err.className = 'sw-err';
-  err.style.display = 'none';
-  card.append(brand, note, status, count, countLabel, countHint, err);
-  root.appendChild(card);
-  let rafId = 0;
-  const stopCountdown = (hide: boolean): void => {
-    cancelAnimationFrame(rafId);
-    rafId = 0;
-    if (hide) count.style.display = countLabel.style.display = countHint.style.display = 'none';
-  };
-  return {
-    root,
-    setStatus: (t: string) => {
-      status.textContent = t;
-    },
-    setNote: (html: string) => {
-      note.innerHTML = html;
-    },
-    setError: (t: string | null) => {
-      err.textContent = t ?? '';
-      err.style.display = t ? 'block' : 'none';
-    },
-    startRealtimeCountdown: (endTs: number) => {
-      count.style.display = countLabel.style.display = countHint.style.display = 'block';
-      countLabel.textContent = 'Your link opens in';
-      countHint.textContent = 'If a checkbox appears at the bottom, tap it to confirm you’re human';
-      const tick = (): void => {
-        const left = endTs - Date.now();
-        count.textContent = `${(Math.max(0, left) / 1000).toFixed(2)} s`;
-        if (left <= 0) {
-          rafId = 0;
-          return;
-        }
-        rafId = requestAnimationFrame(tick);
-      };
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(tick);
-    },
-    stopCountdown: () => stopCountdown(false),
-    hideCountdown: () => stopCountdown(true),
-  };
+function createOverlay(): ProgressOverlay {
+  return createProgressOverlay({
+    id: OVERLAY_ID,
+    noteHtml:
+      '<strong>Hang tight — getting your download ready.</strong> You don’t need to tap anything on the page. We’ll open your link automatically when it’s done.',
+    status: 'Getting things ready…',
+    countdownHint: 'If a checkbox appears at the bottom, tap it to confirm you’re human',
+    blockInteraction: false,
+    extraCss: turnstileWidgetCss,
+  });
 }
 
 async function runDownloadLinkFlow(code: string): Promise<void> {
@@ -131,7 +68,7 @@ async function runDownloadLinkFlow(code: string): Promise<void> {
           '<strong>Almost there.</strong> If a checkbox appears at the bottom, tap it to confirm you’re human. Otherwise, just wait — your link opens here automatically.',
         );
         ui.setStatus('Waiting for your link to open…');
-        ui.startRealtimeCountdown(d.waitEndTs!);
+        ui.startCountdown(d.waitEndTs!);
         break;
       case 'complete':
         ui.stopCountdown();

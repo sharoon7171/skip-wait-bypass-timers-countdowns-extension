@@ -1,6 +1,6 @@
 import { isAllowedHost } from '../utils/domain-check';
 import { getHostsByKey } from '../utils/remote-domains';
-import { SKIPWAIT_CARD_STYLES } from '../utils/skipwait-card-styles';
+import { createInlineCard } from '../injected-ui/card';
 
 const KEY = 'onlinetools-direct-download';
 const CARD_ID = 'skipwait-onlinetools-card';
@@ -115,12 +115,13 @@ function run(): void {
   };
 
   if (!document.getElementById(CARD_ID)) {
-    const s = SKIPWAIT_CARD_STYLES;
-    const card = document.createElement('div');
-    card.id = CARD_ID;
-    card.setAttribute('style', s.card);
-    card.innerHTML = `<div style="${s.badge}">Skip Wait extension</div><p style="${s.description}">We made the <strong>Copy</strong> and <strong>Download</strong> buttons work in one click - no pop-ups, no waiting. Just use the buttons below.</p>`;
-    twoColRow.insertBefore(card, twoColRow.firstChild);
+    const card = createInlineCard({
+      id: CARD_ID,
+      badge: 'Skip Wait extension',
+      description:
+        'We made the <strong>Copy</strong> and <strong>Download</strong> buttons work in one click - no pop-ups, no waiting. Just use the buttons below.',
+    });
+    twoColRow.insertBefore(card.root, twoColRow.firstChild);
   }
 
   hijack(copyBtn, copy);
