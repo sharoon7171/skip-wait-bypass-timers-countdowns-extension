@@ -1,26 +1,26 @@
-export function pageHtml(): string {
+function pageHtml(): string {
   return document.documentElement?.innerHTML ?? '';
 }
 
-export function hasWolfexeVerifyUi(root: ParentNode = document): boolean {
+function hasWolfexeVerifyUi(root: ParentNode = document): boolean {
   return Boolean(
     root.querySelector('#wolfexe-time, #wolfexe-wait1, #co-time, #wolfexe-snp, #go_d'),
   );
 }
 
-export function hasMoobiedatVerifyUi(root: ParentNode = document): boolean {
+function hasMoobiedatVerifyUi(root: ParentNode = document): boolean {
   return Boolean(
     root.querySelector('#seconds, #nextBtn, #progress, .moobiedat-container, #redirectBtn'),
   );
 }
 
-export function isWolfexeMediatorShell(html: string = pageHtml()): boolean {
+function isWolfexeMediatorShell(html: string = pageHtml()): boolean {
   if (hasWolfexeVerifyUi()) return true;
   if (html.length < 800) return false;
   return /#wolfexe-time|#co-time|id=["']go_d["']|wolfexe-wait1/i.test(html);
 }
 
-export function isMoobiedatMediatorShell(html: string = pageHtml()): boolean {
+function isMoobiedatMediatorShell(html: string = pageHtml()): boolean {
   if (hasMoobiedatVerifyUi()) return true;
   if (html.length < 800) return false;
   return /moobiedat-container|id=["']nextBtn["']|Please\s*Wait\s*N?\s*Seconds/i.test(html);

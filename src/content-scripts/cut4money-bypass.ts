@@ -1,3 +1,11 @@
+import {
+  clearCut4MoneyOverlaySession,
+  mountCut4MoneyOverlay,
+  persistCut4MoneyOverlaySession,
+  readCut4MoneyOverlaySession,
+  restoreCut4MoneyOverlayFromSession,
+  type Cut4MoneyOverlay,
+} from '../injected-ui/presets';
 import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
 import { getHostsByKey } from '../utils/remote-domains';
 import {
@@ -16,63 +24,59 @@ import {
   DEFAULT_SHORTENER_HOSTS,
   isShortenerHost,
   isShortenerPleaseWait,
-  isShortenerReferer,
   shortenerAliasFromUrl,
   shortenerUrl,
 } from './cut4money/hosts';
+import {
+  fetchShortenerFirstHop,
+  finishV2linksInterstitial,
+  isShortenerContinuePage,
+  isV2linksInterstitial,
+} from './cut4money/links-api';
 import {
   aliasFromMediatorQuery,
   isMediatorShell,
   shortenerAliasFromHtml,
 } from './cut4money/mediator';
-import {
-  clearCut4MoneyOverlaySession,
-  mountCut4MoneyOverlay,
-  persistCut4MoneyOverlaySession,
-  readCut4MoneyOverlaySession,
-  restoreCut4MoneyOverlayFromSession,
-  type Cut4MoneyOverlay,
-} from '../injected-ui/presets';
-import {
-  fetchShortenerFirstHop,
-  finishV2linksInterstitial,
-  isV2linksInterstitial,
-} from './cut4money/links-api';
 
 const REMOTE_DOMAINS_KEY = 'cut4money-bypass';
 
 const COPY = {
-  start: {
-    title: 'Starting automated bypass',
-    detail: 'Opening the verification page. Please wait — no clicks needed.',
+  working: {
+    title: 'Skip Wait',
+    detail: 'Bypassing this short link…',
   },
-  mediator: {
-    title: 'Step 1 of 2 · Verification',
-    detail: 'Confirming the article page, then continuing automatically.',
+  hop: {
+    title: 'Opening verification',
+    detail: 'Loading the article page. No clicks needed.',
   },
   returnShortener: {
-    title: 'Step 2 of 2 · Link unlock',
-    detail: 'Returning to the short link to fetch your file.',
+    title: 'Returning to short link',
+    detail: 'Verification recorded. Unlocking your link next.',
   },
   unlock: {
-    title: 'Step 2 of 2 · Preparing download',
-    detail: 'Getting your link. This runs automatically.',
+    title: 'Unlocking your link',
+    detail: 'Fetching your destination URL.',
+  },
+  unlockStep: {
+    title: 'Step 2 · Unlocking your link',
+    detail: 'Fetching your destination URL.',
   },
   destination: {
-    title: 'Almost there',
-    detail: 'Opening your download page now.',
+    title: 'Opening your link',
+    detail: 'Redirecting to your destination now.',
   },
   needArticle: {
-    title: 'Waiting for verification',
-    detail: 'Complete the article step first, then open the short link again.',
+    title: 'Start from the short link',
+    detail: 'Open the short-link URL again so Skip Wait can finish the flow.',
   },
   unlockFailed: {
     title: 'Could not get your link',
-    detail: 'Reload the short-link tab or start again from the original URL.',
+    detail: 'Reload this tab or open the short link again.',
   },
   startFailed: {
-    title: 'Could not start bypass',
-    detail: 'Reload the short-link tab and try again.',
+    title: 'Could not start',
+    detail: 'Reload this tab and try again.',
   },
 } as const;
 
@@ -135,14 +139,14 @@ function ui(): Cut4MoneyOverlay {
   return restoreCut4MoneyOverlayFromSession() ?? mountCut4MoneyOverlay();
 }
 
-function show(ui: Cut4MoneyOverlay, title: string, detail: string): void {
-  ui.setPhase(title, detail);
+function show(overlay: Cut4MoneyOverlay, copy: { title: string; detail: string }): void {
+  overlay.setPhase(copy.title, copy.detail);
 }
 
-function navigate(url: string, title: string, detail: string): void {
+function navigate(url: string, copy: { title: string; detail: string }): void {
   navigating = true;
-  persistCut4MoneyOverlaySession({ title, detail });
-  show(ui(), title, detail);
+  persistCut4MoneyOverlaySession(copy);
+  show(ui(), copy);
   window.location.replace(url);
 }
 
@@ -165,16 +169,22 @@ async function resolveAlias(chain: Cut4MoneyChain): Promise<string | null> {
 }
 
 async function refererForUnlock(chain: Cut4MoneyChain): Promise<string | null> {
-  const ref = document.referrer?.trim();
-  if (ref && /^https?:\/\//i.test(ref) && !isShortenerReferer(ref)) return ref;
   if (chain.lastArticleUrl) return chain.lastArticleUrl;
   return (await readPendingUnlock())?.referer ?? null;
+}
+
+function shouldUnlock(chain: Cut4MoneyChain, html: string): boolean {
+  return (
+    isV2linksInterstitial(html) ||
+    isShortenerContinuePage(html) ||
+    chain.phase === 'unlock'
+  );
 }
 
 function openDestination(url: string): void {
   if (navigating) return;
   navigating = true;
-  show(ui(), COPY.destination.title, COPY.destination.detail);
+  show(ui(), COPY.destination);
   void writePendingUnlock(null);
   void clearCut4MoneyChain();
   clearCut4MoneyOverlaySession();
@@ -191,50 +201,33 @@ function goToShortenerUnlock(
   void writeCut4MoneyChain(
     chainPayload(alias, chain, { phase: 'unlock', lastArticleUrl: articleUrl }, host),
   );
-  navigate(
-    shortenerUrl(alias, host),
-    COPY.returnShortener.title,
-    COPY.returnShortener.detail,
-  );
-}
-
-async function redirectToMediator(
-  alias: string,
-  host: string,
-  overlay: Cut4MoneyOverlay,
-): Promise<boolean> {
-  show(overlay, COPY.start.title, COPY.start.detail);
-  const hop = await fetchShortenerFirstHop(alias, host);
-  if (!hop) {
-    show(overlay, COPY.startFailed.title, COPY.startFailed.detail);
-    return false;
-  }
-  navigate(hop, COPY.start.title, COPY.start.detail);
-  return true;
+  navigate(shortenerUrl(alias, host), COPY.returnShortener);
 }
 
 async function runMediatorFlow(chain: Cut4MoneyChain, alias: string): Promise<void> {
   requestVisibilitySpoof();
-  const overlay = ui();
-  show(overlay, COPY.mediator.title, COPY.mediator.detail);
   const articleUrl = location.href.split('#')[0] ?? location.href;
   goToShortenerUnlock(alias, chain, articleUrl);
 }
 
 async function runUnlockVisit(alias: string, chain: Cut4MoneyChain): Promise<void> {
   const overlay = ui();
+  const html = document.documentElement?.innerHTML ?? '';
+  const selfContained = isShortenerContinuePage(html);
+  const onUnlockPage = isV2linksInterstitial(html);
   const referer = await refererForUnlock(chain);
-  if (!referer) {
-    show(overlay, COPY.needArticle.title, COPY.needArticle.detail);
+
+  if (!onUnlockPage && !selfContained && !referer) {
+    show(overlay, COPY.needArticle);
     return;
   }
 
-  if (!isV2linksInterstitial()) {
-    goToShortenerUnlock(alias, chain, referer);
+  if (!onUnlockPage && !selfContained) {
+    goToShortenerUnlock(alias, chain, referer!);
     return;
   }
 
-  show(overlay, COPY.unlock.title, COPY.unlock.detail);
+  show(overlay, selfContained ? COPY.unlock : COPY.unlockStep);
   const dest = await finishV2linksInterstitial(location.href, (sec) =>
     overlay.startCountdown(sec),
   );
@@ -242,7 +235,24 @@ async function runUnlockVisit(alias: string, chain: Cut4MoneyChain): Promise<voi
     openDestination(dest);
     return;
   }
-  show(overlay, COPY.unlockFailed.title, COPY.unlockFailed.detail);
+  show(overlay, COPY.unlockFailed);
+}
+
+async function syncChain(alias: string, host: string): Promise<Cut4MoneyChain> {
+  let chain = await readCut4MoneyChain();
+  if (chainNeedsReset(chain, alias)) {
+    await writePendingUnlock(null);
+    await clearCut4MoneyChain();
+    chain = { ...EMPTY_CUT4MONEY_CHAIN };
+  }
+  if (!chain.alias || chain.alias !== alias) {
+    await writeCut4MoneyChain(
+      chainPayload(alias, null, { phase: 'mediators', lastArticleUrl: null }, host),
+    );
+    rememberAlias(alias);
+    chain = await readCut4MoneyChain();
+  }
+  return chain;
 }
 
 async function runShortenerFlow(): Promise<void> {
@@ -251,35 +261,22 @@ async function runShortenerFlow(): Promise<void> {
 
   const host = location.hostname.replace(/^www\./i, '');
   const overlay = ui();
-  let chain = await readCut4MoneyChain();
-
-  if (chainNeedsReset(chain, alias)) {
-    await writePendingUnlock(null);
-    await clearCut4MoneyChain();
-    chain = { ...EMPTY_CUT4MONEY_CHAIN };
-  }
-
-  if (!chain.alias || chain.alias !== alias) {
-    await writeCut4MoneyChain(
-      chainPayload(alias, null, { phase: 'mediators', lastArticleUrl: null }, host),
-    );
-    rememberAlias(alias);
-    chain = await readCut4MoneyChain();
-  }
-
-  if (isV2linksInterstitial()) {
-    await runUnlockVisit(alias, chain);
-    return;
-  }
-
-  if (chain.phase === 'unlock') {
-    await runUnlockVisit(alias, chain);
-    return;
-  }
-
+  const chain = await syncChain(alias, host);
   const html = document.documentElement?.innerHTML ?? '';
+
+  if (shouldUnlock(chain, html)) {
+    await runUnlockVisit(alias, chain);
+    return;
+  }
+
+  const hop = await fetchShortenerFirstHop(alias, shortenerHostFrom(chain));
+  if (hop && !/t\.co/i.test(hop)) {
+    navigate(hop, COPY.hop);
+    return;
+  }
+
   if (isShortenerPleaseWait(html) || chain.phase === 'mediators') {
-    await redirectToMediator(alias, shortenerHostFrom(chain), overlay);
+    show(overlay, COPY.startFailed);
   }
 }
 
@@ -316,17 +313,9 @@ export function initCut4MoneyBypass(): void {
     requestVisibilitySpoof();
   }
 
-  if (aliasOnShortener) {
-    const alias = shortenerAliasFromUrl(location.href)!;
-    const host = location.hostname.replace(/^www\./i, '');
-    void writeCut4MoneyChain(
-      chainPayload(alias, null, { phase: 'mediators', lastArticleUrl: null }, host),
-    );
-    rememberAlias(alias);
-    if (!readCut4MoneyOverlaySession()) {
-      persistCut4MoneyOverlaySession(COPY.start);
-      mountCut4MoneyOverlay().setPhase(COPY.start.title, COPY.start.detail);
-    }
+  if (aliasOnShortener && !readCut4MoneyOverlaySession()) {
+    persistCut4MoneyOverlaySession(COPY.working);
+    mountCut4MoneyOverlay().setPhase(COPY.working.title, COPY.working.detail);
   }
 
   const start = (): void => {

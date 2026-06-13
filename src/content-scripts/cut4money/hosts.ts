@@ -21,24 +21,12 @@ export function shortenerAliasFromUrl(href: string): string | null {
   }
 }
 
-export function shortenerOrigin(host: string): string {
-  const h = host.toLowerCase().replace(/^www\./, '');
-  return `https://${h}`;
-}
-
 export function shortenerUrl(alias: string, host: string): string {
-  return `${shortenerOrigin(host)}/${alias}`;
+  const h = host.toLowerCase().replace(/^www\./, '');
+  return `https://${h}/${alias}`;
 }
 
 export function isShortenerPleaseWait(html: string): boolean {
   if (html.length > 2800) return false;
   return /please\s*wait|redirecting/i.test(html);
-}
-
-export function isShortenerReferer(ref: string): boolean {
-  try {
-    return isShortenerHostname(new URL(ref).hostname);
-  } catch {
-    return false;
-  }
 }
