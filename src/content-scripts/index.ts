@@ -21,6 +21,7 @@ import { initFilePressDirectDownload } from '../sites/filepress';
 import {
   initHdhub4uLandingPageMed,
   initHdhub4uMediatorPage,
+  initHubcdnDl,
   initHubcloudDrive,
 } from '../sites/hdhub4u';
 import { initKitokolaDlGetBypass } from './kitokola-dl-get-bypass';
@@ -63,6 +64,7 @@ const INITS = [
   initFclcRedirect,
   initHdhub4uLandingPageMed,
   initHdhub4uMediatorPage,
+  initHubcdnDl,
   initHubcloudDrive,
   initKitokolaDlGetBypass,
   initMultiup,
