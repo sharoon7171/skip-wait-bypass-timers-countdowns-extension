@@ -5,7 +5,8 @@ import { initFlightsimToMainWorldInject } from './flightsim-to-main-world';
 import { initArolinksGuard } from './arolinks-guard';
 import { initCut4MoneyShr2Hop } from './cut4money-shr2-hop';
 import { initShortxlinksFetchChain } from './shortxlinks-fetch-chain';
-import { initXdmoviesMainWorldInject } from './xdmovies-main-world';
+import { initXdmoviesLandingPageNav } from '../sites/xdmovies/landing-page-med';
+import { initXdmoviesMainWorldInject } from '../sites/xdmovies/mediator-page';
 
 initCoomeetMainWorldInject();
 initDocumentVisibilitySpoof();
@@ -14,4 +15,5 @@ initFlightsimToMainWorldInject();
 initArolinksGuard();
 initShortxlinksFetchChain();
 initCut4MoneyShr2Hop();
+initXdmoviesLandingPageNav();
 initXdmoviesMainWorldInject();

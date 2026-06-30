@@ -22,3 +22,20 @@ export function whenDomParsed(run: () => void): void {
     run();
   });
 }
+
+export function whenDomReady(check: () => boolean): Promise<void> {
+  if (check()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const mo = new MutationObserver(() => {
+      if (!check()) return;
+      mo.disconnect();
+      resolve();
+    });
+    mo.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style', 'hidden'],
+    });
+  });
+}

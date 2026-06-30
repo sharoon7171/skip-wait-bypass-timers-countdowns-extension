@@ -1,6 +1,5 @@
 import { initFourDownloadDirectLinks } from './4download-direct-links';
-import { initXdmoviesDownloadLink } from './xdmovies-download-link';
-import { initXdmoviesLanding } from './xdmovies-landing';
+import { initXdmoviesMediatorPage } from '../sites/xdmovies';
 import {
   initCoomeetIframeBootstrap,
   isOnCoomeetIframeHost,
@@ -51,8 +50,7 @@ const INITS = [
   initAdlinkClickVerifyPoll,
   initAdlinkflyLinksGo,
   initFourDownloadDirectLinks,
-  initXdmoviesLanding,
-  initXdmoviesDownloadLink,
+  initXdmoviesMediatorPage,
   initMoviesModContentScript,
   initUhdmoviesCloudContentScript,
   initAdlinkflyTokenPayload,

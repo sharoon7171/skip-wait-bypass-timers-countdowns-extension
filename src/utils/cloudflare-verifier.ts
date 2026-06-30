@@ -26,3 +26,11 @@ export function isCloudflareHumanVerificationDone(
   }
   return token !== null || getCfClearance() !== null;
 }
+
+export function isCloudflareInterstitial(): boolean {
+  const title = document.title.toLowerCase();
+  if (title.includes('just a moment') || title.includes('attention required')) return true;
+  if (document.querySelector('script[src*="cdn-cgi/challenge-platform"]')) return true;
+  if (document.querySelector('#challenge-running, #cf-challenge-running')) return true;
+  return false;
+}
