@@ -1,8 +1,7 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 import { createProgressOverlay, turnstileWidgetCss, type ProgressOverlay } from '../injected-ui/progress-overlay';
 
-const KEY = 'xdmovies-download-link';
+const HOSTS = ['latestnewsonline.sbs'] as const;
 const MSG_SOURCE = 'skip-wait-xdmovies';
 const MSG_VISIBILITY = 'INJECT_VISIBILITY_SPOOF';
 const OVERLAY_ID = 'skip-wait-xdmovies-overlay';
@@ -97,7 +96,7 @@ async function runDownloadLinkFlow(code: string): Promise<void> {
 }
 
 export function initXdmoviesDownloadLink(): void {
-  if (window !== window.top || !isAllowedHost(getHostsByKey(KEY))) return;
+  if (window !== window.top || !isAllowedHost(HOSTS)) return;
   const code = location.pathname.match(PATH)?.[1];
   if (!code) return;
   chrome.runtime.sendMessage({ type: MSG_VISIBILITY });

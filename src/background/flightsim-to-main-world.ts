@@ -1,8 +1,6 @@
 import { hostnameMatches } from '../utils/domain-check';
-import { bootstrapRemoteDomains, getHostsByKey } from '../utils/remote-domains';
-import { isExtensionEnabledSync } from '../utils/extension-enabled';
 
-const FLIGHTSIM_KEY = 'flightsim-to-download-instant';
+const HOSTS = ['flightsim.to'] as const;
 const FLIGHTSIM_SITEKEY = '0x4AAAAAAAEkCIsHFwbAgKn3';
 const ADDON_PATH_RE = /^\/addon\/\d+(?:\/|$)/i;
 
@@ -174,31 +172,19 @@ export function runFlightsimDownloadPatch(sitekey: string): void {
   if (w.turnstile) onTurnstileReady();
 }
 
-let domainsLoaded = false;
-async function ensureRemoteDomains(): Promise<readonly string[]> {
-  if (!domainsLoaded) {
-    await bootstrapRemoteDomains();
-    if (getHostsByKey(FLIGHTSIM_KEY).length > 0) domainsLoaded = true;
-  }
-  return getHostsByKey(FLIGHTSIM_KEY);
-}
-
-async function isFlightsimAddonUrl(url: string | undefined): Promise<boolean> {
+function isFlightsimAddonUrl(url: string | undefined): boolean {
   if (!url || !URL.canParse(url)) return false;
   const u = new URL(url);
   if (!ADDON_PATH_RE.test(u.pathname)) return false;
-  const hosts = await ensureRemoteDomains();
-  return hostnameMatches(u.hostname, hosts);
+  return hostnameMatches(u.hostname, HOSTS);
 }
 
 export function initFlightsimToMainWorldInject(): void {
-  void ensureRemoteDomains();
   chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.status !== 'loading') return;
     const url = changeInfo.url ?? tab.url;
     void (async () => {
-      if (!isExtensionEnabledSync()) return;
-      if (!(await isFlightsimAddonUrl(url))) return;
+      if (!isFlightsimAddonUrl(url)) return;
       try {
         await chrome.scripting.executeScript({
           target: { tabId, allFrames: false },

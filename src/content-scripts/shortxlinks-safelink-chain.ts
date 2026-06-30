@@ -1,5 +1,4 @@
 import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 import {
   SHORTX_CHECK_UNLOCK,
   SHORTX_FETCH_CHAIN,
@@ -8,8 +7,11 @@ import {
 } from './shortxlinks-chain';
 import { createProgressOverlay, type ProgressOverlay } from '../injected-ui/progress-overlay';
 
-const KEY = 'shortxlinks-safelink-chain';
-const LOCAL_HOSTS = ['shortxlinks.com', 'flexthecar.com', 'nkrmusic.in.net'] as const;
+const HOSTS = [
+  'shortxlinks.com',
+  'flexthecar.com',
+  'nkrmusic.in.net',
+] as const;
 const OVERLAY_ID = 'skip-wait-shortx-overlay';
 const AD_WAIT_MS = 22_000;
 const UNLOCK_POLL_MS = 250;
@@ -24,7 +26,7 @@ let flowRunning = false;
 let flowStarted = false;
 
 function allowedHosts(): readonly string[] {
-  return [...new Set([...LOCAL_HOSTS, ...getHostsByKey(KEY)])];
+  return HOSTS;
 }
 
 function persistStartFromLocation(): void {

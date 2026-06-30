@@ -1,8 +1,7 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 import { cardActionsRow, cardButton, createInlineCard } from '../injected-ui/card';
 
-const KEY = 'onhaxpk-copy';
+const HOSTS = ['onhaxpk.net'] as const;
 const CARD_ID = 'skipwait-onhax-card';
 const COOKIE_EDITOR_RE = /<xmp>\[\s*([\s\S]*?)<\/xmp>/;
 const SESSION_PASTE_RE = /session_paste\s+([A-Za-z0-9+/=]+)/;
@@ -73,7 +72,7 @@ function run(): void {
 }
 
 export function initOnhaxpkCopy(): void {
-  if (!isAllowedHost(getHostsByKey(KEY))) return;
+  if (!isAllowedHost(HOSTS)) return;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
   else run();
 }

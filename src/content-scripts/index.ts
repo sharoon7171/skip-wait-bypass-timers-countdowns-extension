@@ -1,5 +1,4 @@
-import { bootstrapRemoteDomains } from '../utils/remote-domains';
-import { readExtensionEnabled, watchExtensionEnabledToggleReload } from '../utils/extension-enabled';
+import { watchExtensionEnabledToggleReload } from '../utils/extension-enabled';
 import { initFourDownloadDirectLinks } from './4download-direct-links';
 import { initXdmoviesDownloadLink } from './xdmovies-download-link';
 import { initXdmoviesLanding } from './xdmovies-landing';
@@ -19,13 +18,14 @@ import { initClipiRedirect } from './clipi-redirect';
 import { initCookiesceoCopy } from './cookiesceo-copy';
 import { initFastdlZipRedirect } from './fastdl-zip-redirect';
 import { initFclcRedirect } from './fclc-redirect';
-import { initHdhub4uLanding } from './hdhub4u-landing';
-import { initHdhub4uTimerBypass } from './hdhub4u-timer-bypass';
-import { initHubcdnRedirect } from './hubcdn-redirect';
+import {
+  initHdhub4uLandingPageMed,
+  initHdhub4uMediatorPage,
+  initHubcloudDrive,
+} from '../sites/hdhub4u';
 import { initKitokolaDlGetBypass } from './kitokola-dl-get-bypass';
 import { initLinkjust } from './linkjust';
 import { initMoviesModContentScript } from './movies-mod';
-import { initHubcloudDrive } from './hubcloud-drive';
 import { initMultiup } from './multiup';
 import { initOnhaxpkCopy } from './onhaxpk-copy';
 import { initOnlinetoolsDirectDownload } from './onlinetools-direct-download';
@@ -60,9 +60,8 @@ const INITS = [
   initCookiesceoCopy,
   initFastdlZipRedirect,
   initFclcRedirect,
-  initHdhub4uLanding,
-  initHdhub4uTimerBypass,
-  initHubcdnRedirect,
+  initHdhub4uLandingPageMed,
+  initHdhub4uMediatorPage,
   initHubcloudDrive,
   initKitokolaDlGetBypass,
   initMultiup,
@@ -83,19 +82,17 @@ const INITS = [
 
 const isExtensionContext = typeof chrome !== 'undefined' && !!chrome.runtime?.id;
 
-async function boot(): Promise<void> {
+function boot(): void {
   if (!isExtensionContext) {
     runCoomeetMainWorldAccelerator();
     return;
   }
   watchExtensionEnabledToggleReload();
-  if (!(await readExtensionEnabled())) return;
   if (isOnCoomeetIframeHost()) {
     initCoomeetIframeBootstrap();
     return;
   }
   if (window !== window.top) return;
-  await bootstrapRemoteDomains();
   for (const init of INITS) {
     try {
       init();
@@ -103,4 +100,4 @@ async function boot(): Promise<void> {
   }
 }
 
-void boot();
+boot();

@@ -7,7 +7,6 @@ import {
   type Cut4MoneyOverlay,
 } from '../injected-ui/presets';
 import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 import {
   CUT4MONEY_ALIAS_KEY,
   EMPTY_CUT4MONEY_CHAIN,
@@ -38,8 +37,6 @@ import {
   isMediatorShell,
   shortenerAliasFromHtml,
 } from './cut4money/mediator';
-
-const REMOTE_DOMAINS_KEY = 'cut4money-bypass';
 
 const COPY = {
   working: {
@@ -83,8 +80,8 @@ const COPY = {
 let flowRunning = false;
 let navigating = false;
 
-function shortenerHosts(): string[] {
-  return [...new Set([...DEFAULT_SHORTENER_HOSTS, ...getHostsByKey(REMOTE_DOMAINS_KEY)])];
+function shortenerHosts(): readonly string[] {
+  return DEFAULT_SHORTENER_HOSTS;
 }
 
 function isShortenerRootHost(): boolean {

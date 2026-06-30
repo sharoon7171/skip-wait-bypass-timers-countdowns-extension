@@ -1,7 +1,6 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 
-const KEY = 'kitokola-dl-get-bypass';
+const HOSTS = ['kitokola.id'] as const;
 const STORAGE_KEYS = ['mi-active', 'mi-dl', 'mi-start', 'mi-total'];
 
 function clearTimerState(): void {
@@ -37,7 +36,7 @@ function decodeTarget(raw: string): string | null {
 }
 
 export function initKitokolaDlGetBypass(): void {
-  if (!isAllowedHost(getHostsByKey(KEY))) return;
+  if (!isAllowedHost(HOSTS)) return;
   const candidate = readUrlDownload() ?? readStoredDownload();
   if (!candidate) return;
   const target = decodeTarget(candidate);

@@ -1,7 +1,6 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 
-const KEY = 'romsfun-download-instant';
+const HOSTS = ['romsfun.com'] as const;
 
 type AjaxJson = {
   success?: boolean;
@@ -50,7 +49,7 @@ function hideSpinnerIfPresent(): void {
 }
 
 export function initRomsfunDownloadInstant(): void {
-  if (!isAllowedHost(getHostsByKey(KEY)) || !isDownloadPage()) return;
+  if (!isAllowedHost(HOSTS) || !isDownloadPage()) return;
 
   hideSpinnerIfPresent();
   const mo = new MutationObserver(hideSpinnerIfPresent);

@@ -1,7 +1,9 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 
-const KEY = 'movies-mod';
+const HOSTS = [
+  'episodes.modpro.blog',
+  'links.modpro.blog',
+] as const;
 const STYLE_ID = 'skipwait-movies-mod-timed-content';
 
 function injectBypassStyle(): void {
@@ -14,6 +16,6 @@ function injectBypassStyle(): void {
 }
 
 export function initMoviesModContentScript(): void {
-  if (!isAllowedHost(getHostsByKey(KEY))) return;
+  if (!isAllowedHost(HOSTS)) return;
   injectBypassStyle();
 }

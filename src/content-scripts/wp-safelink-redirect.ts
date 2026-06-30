@@ -1,8 +1,12 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 import { showMessageOverlay } from '../injected-ui/message-overlay';
 
-const KEY = 'wp-safelink-redirect';
+const HOSTS = [
+  'demo-safelink.themeson.com',
+  'dev-safelink.themeson.com',
+  'questloops.com',
+  'stbemuiptvcodes.com',
+] as const;
 const OVERLAY_ID = 'skip-wait-wp-safelink-overlay';
 const SAFELINK_RE = /https?:\/\/[^"'\s]+safelink_redirect=[A-Za-z0-9+/=]+/;
 
@@ -20,7 +24,7 @@ function urlFromNode(node: Node): string | null {
 }
 
 export function initWpSafelinkRedirect(): void {
-  if (!isAllowedHost(getHostsByKey(KEY))) return;
+  if (!isAllowedHost(HOSTS)) return;
 
   const mo = new MutationObserver((muts) => {
     for (const m of muts) {

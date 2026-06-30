@@ -1,11 +1,10 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 
-const KEY = 'prmovies-redirect';
+const HOSTS = ['prmovies.mba'] as const;
 const API_URL = 'https://rep.prmovies3.online/api/get';
 
 export function initPrmoviesRedirect(): void {
-  if (!isAllowedHost(getHostsByKey(KEY))) return;
+  if (!isAllowedHost(HOSTS)) return;
   fetch(`${API_URL}?v=${Date.now()}`, { cache: 'no-store' })
     .then((r) => r.json())
     .then((data: { key?: string } | null) => {

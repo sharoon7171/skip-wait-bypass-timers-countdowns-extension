@@ -1,12 +1,9 @@
 import { hostnameMatches } from '../../utils/domain-check';
-import { getHostsByKey } from '../../utils/remote-domains';
 
-const KEY = 'linkjust';
-const FALLBACK_ROOTS = ['linkjust.com'] as const;
+const HOSTS = ['linkjust.com'] as const;
 
 export function linkjustRoots(): readonly string[] {
-  const remote = getHostsByKey(KEY);
-  return remote.length ? remote : FALLBACK_ROOTS;
+  return HOSTS;
 }
 
 export function isLinkjustHostname(hostname: string): boolean {

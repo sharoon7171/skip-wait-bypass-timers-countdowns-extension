@@ -1,7 +1,6 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 
-const KEY = 'sub2get-redirect';
+const HOSTS = ['sub2get.com'] as const;
 const UNLOCK_SELECTOR = '#butunlock a';
 
 function toAbsoluteUrl(raw: string): string {
@@ -12,7 +11,7 @@ function toAbsoluteUrl(raw: string): string {
 }
 
 export function initSub2getRedirect(): void {
-  if (!isAllowedHost(getHostsByKey(KEY))) return;
+  if (!isAllowedHost(HOSTS)) return;
 
   const tryRedirect = (): boolean => {
     const href = document.querySelector(UNLOCK_SELECTOR)?.getAttribute('href')?.trim();

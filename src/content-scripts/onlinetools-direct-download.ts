@@ -1,8 +1,14 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 import { createInlineCard } from '../injected-ui/card';
 
-const KEY = 'onlinetools-direct-download';
+const HOSTS = [
+  'onlinegiftools.com',
+  'onlinejpgtools.com',
+  'onlinepngtools.com',
+  'onlinestringtools.com',
+  'onlinetexttools.com',
+  'onlinetools.com',
+] as const;
 const CARD_ID = 'skipwait-onlinetools-card';
 const DATA_HIJACKED = 'data-skipwait-hijacked';
 const SELECTORS = {
@@ -129,7 +135,7 @@ function run(): void {
 }
 
 export function initOnlinetoolsDirectDownload(): void {
-  if (!isAllowedHost(getHostsByKey(KEY))) return;
+  if (!isAllowedHost(HOSTS)) return;
   const check = (): void => {
     const toolOutput = document.querySelector(SELECTORS.toolOutput);
     if (!toolOutput) return;

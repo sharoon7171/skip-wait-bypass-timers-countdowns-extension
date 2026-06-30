@@ -1,7 +1,6 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 
-const KEY = 'xdmovies-landing';
+const HOSTS = ['xdmovies.com'] as const;
 const ANCHOR_RE = /<a\b[^>]*\shref="(https?:\/\/[^"]+)"/gi;
 
 function pickDestination(html: string): string | null {
@@ -29,7 +28,7 @@ function pickDestination(html: string): string | null {
 
 export function initXdmoviesLanding(): void {
   if (window !== window.top) return;
-  if (!isAllowedHost(getHostsByKey(KEY))) return;
+  if (!isAllowedHost(HOSTS)) return;
   fetch(location.href, { credentials: 'omit' })
     .then((r) => (r.ok ? r.text() : null))
     .then((html) => {

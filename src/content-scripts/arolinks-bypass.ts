@@ -1,5 +1,4 @@
 import { whenDomParsed } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 import {
   ARO_ALIAS_KEY,
   EMPTY_AROLINKS_CHAIN,
@@ -30,8 +29,10 @@ import {
 import { mountArolinksOverlay } from '../injected-ui/presets';
 import type { BypassOverlay } from '../injected-ui/overlay';
 
-const KEY = 'arolinks-bypass';
-const LOCAL_HOSTS = ['arolinks.com', 'deltastudy.site'] as const;
+const HOSTS = [
+  'arolinks.com',
+  'deltastudy.site',
+] as const;
 const ARO_FIRST_REDIRECT_KEY = 'sw-aro-first-redirect';
 const BYPASS_COOKIES = [
   { name: 'adcadg', value: 'insurance,online_colleges,study_abroad,finance,loan' },
@@ -84,7 +85,7 @@ function hasMediatorVerifyUi(): boolean {
 
 function isArolinksRootHost(): boolean {
   const host = location.hostname.toLowerCase();
-  const roots = [...new Set([...LOCAL_HOSTS, ...getHostsByKey(KEY)])];
+  const roots = HOSTS;
   return roots.some((r) => host === r || host.endsWith(`.${r}`));
 }
 

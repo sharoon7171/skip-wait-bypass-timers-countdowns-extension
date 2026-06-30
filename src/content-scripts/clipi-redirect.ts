@@ -1,14 +1,13 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 
-const KEY = 'clipi-redirect';
+const HOSTS = ['clipi.cc'] as const;
 const RE = /var\s+longUrl\s*=\s*["']([^"']+)["']/;
 
 const urlFrom = (s: string): string | undefined =>
   s.match(RE)?.[1]?.replace(/\\\//g, '/');
 
 export function initClipiRedirect(): void {
-  if (!isAllowedHost(getHostsByKey(KEY))) return;
+  if (!isAllowedHost(HOSTS)) return;
   const fromPage = [...document.scripts].map((s) => s.textContent ?? '').join('');
   const u = urlFrom(fromPage);
   if (u) return void window.location.replace(u);

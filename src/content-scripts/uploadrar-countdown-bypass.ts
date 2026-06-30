@@ -1,8 +1,7 @@
 import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 import { createStatusOverlay } from '../injected-ui/status-overlay';
 
-const KEY = 'uploadrar-countdown-bypass';
+const HOSTS = ['uploadrar.com'] as const;
 const CDN_LINK_RE = /<a\s+[^>]*href=["']([^"']+)["'][^>]*>\s*(?:<[^>]*>\s*)*Click\s+here\s+to\s+download/i;
 const FILE_SIZE_RE = /\bsize\s*:?\s*([\d.,]+\s*[KMGT]?B)/i;
 const OVERLAY_ID = 'skip-wait-uploadrar-overlay';
@@ -47,6 +46,6 @@ async function run(): Promise<void> {
 }
 
 export function initUploadrarAutomation(): void {
-  if (!isAllowedHost(getHostsByKey(KEY))) return;
+  if (!isAllowedHost(HOSTS)) return;
   whenDomParsed(() => void run());
 }

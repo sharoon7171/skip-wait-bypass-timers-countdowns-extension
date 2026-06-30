@@ -1,5 +1,3 @@
-import { isExtensionEnabledSync } from '../utils/extension-enabled';
-
 export const XDMOVIES_MAIN_WORLD_RUN = 'XDMOVIES_MAIN_WORLD_RUN' as const;
 
 export type XdmoviesMainWorldPayload = {
@@ -189,7 +187,6 @@ export function runXdmoviesMainWorldFlow(P: XdmoviesMainWorldPayload): void {
 export function initXdmoviesMainWorldInject(): void {
   chrome.runtime.onMessage.addListener((message, sender) => {
     if (message?.type !== XDMOVIES_MAIN_WORLD_RUN) return false;
-    if (!isExtensionEnabledSync()) return false;
     const tabId = sender.tab?.id;
     if (tabId === undefined) return false;
     chrome.scripting.executeScript({

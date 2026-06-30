@@ -1,4 +1,3 @@
-import { isExtensionEnabledSync } from '../utils/extension-enabled';
 import {
   runShortxFetchChain,
   SHORTX_CHECK_UNLOCK,
@@ -50,10 +49,6 @@ export function initShortxlinksFetchChain(): void {
       return true;
     }
     if (message?.type !== SHORTX_FETCH_CHAIN) return false;
-    if (!isExtensionEnabledSync()) {
-      sendResponse({ ok: false, error: 'extension disabled' } satisfies ShortxFetchResult);
-      return false;
-    }
     const startUrl = typeof message.startUrl === 'string' ? message.startUrl : '';
     if (!startUrl) {
       sendResponse({ ok: false, error: 'missing start url' } satisfies ShortxFetchResult);

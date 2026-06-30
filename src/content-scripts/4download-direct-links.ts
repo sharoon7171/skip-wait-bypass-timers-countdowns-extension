@@ -1,7 +1,6 @@
 import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 
-const KEY = '4download-direct-links';
+const HOSTS = ['4download.net'] as const;
 const PROVIDER_IDS = [
   'gdrive',
   'mediafire',
@@ -117,7 +116,7 @@ function runArticleView(): void {
 }
 
 export function initFourDownloadDirectLinks(): void {
-  if (!isAllowedHost(getHostsByKey(KEY))) return;
+  if (!isAllowedHost(HOSTS)) return;
   whenDomParsed(() => {
     if (hasDownloadView()) runDownloadView();
     if (document.getElementById(OKE_LINK_ID)) runArticleView();

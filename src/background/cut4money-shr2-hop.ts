@@ -1,4 +1,3 @@
-import { isExtensionEnabledSync } from '../utils/extension-enabled';
 import {
   chainNeedsReset,
   readCut4MoneyChain,
@@ -48,7 +47,6 @@ async function shouldHijack(alias: string): Promise<boolean> {
 export function initCut4MoneyShr2Hop(): void {
   chrome.webNavigation.onBeforeNavigate.addListener((details) => {
     if (details.frameId !== 0) return;
-    if (!isExtensionEnabledSync()) return;
     if (skipTabIds.delete(details.tabId)) return;
 
     const alias = shortenerAliasFromUrl(details.url);

@@ -1,4 +1,3 @@
-import { isExtensionEnabledSync } from '../utils/extension-enabled';
 import {
   installArolinksUnlockGuard,
   releaseArolinksUnlockGuard,
@@ -14,7 +13,7 @@ function injectMainWorld(tabId: number, fn: () => void): void {
 export function initArolinksGuard(): void {
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     const tabId = sender.tab?.id;
-    if (!tabId || !isExtensionEnabledSync()) return false;
+    if (!tabId) return false;
     const fn =
       msg?.type === MSG_ARO_GUARD_ON
         ? installArolinksUnlockGuard

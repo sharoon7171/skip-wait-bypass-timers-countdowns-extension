@@ -1,7 +1,9 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 
-const KEY = 'uhdmovies-cloud';
+const HOSTS = [
+  'cloud.unblockedgames.world',
+  'tech.examzculture.in',
+] as const;
 
 function bytesToBase64(bytes: Uint8Array): string {
   let bin = '';
@@ -29,7 +31,7 @@ async function shortcut(sid: string): Promise<void> {
 }
 
 export function initUhdmoviesCloudContentScript(): void {
-  if (!isAllowedHost(getHostsByKey(KEY))) return;
+  if (!isAllowedHost(HOSTS)) return;
   const sid = new URLSearchParams(window.location.search).get('sid');
   if (!sid) return;
   void shortcut(sid);

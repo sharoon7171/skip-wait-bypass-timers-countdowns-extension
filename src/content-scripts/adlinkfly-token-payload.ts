@@ -1,8 +1,10 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { getHostsByKey } from '../utils/remote-domains';
 import { isCloudflareHumanVerificationDone } from '../utils/cloudflare-verifier';
 
-const KEY = 'adlinkfly-token-payload';
+const HOSTS = [
+  'oii.la',
+  'tpi.li',
+] as const;
 const TOKEN_INPUT_SELECTOR = 'input[name="token"]';
 const TOKEN_HTTP_B64_PREFIX = 'aHR0c';
 
@@ -47,7 +49,7 @@ function tick(): void {
 }
 
 export function initAdlinkflyTokenPayload(): void {
-  if (!isAllowedHost(getHostsByKey(KEY))) return;
+  if (!isAllowedHost(HOSTS)) return;
   const run = () => requestAnimationFrame(tick);
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', run);
