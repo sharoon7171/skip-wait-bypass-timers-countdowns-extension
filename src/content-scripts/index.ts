@@ -11,7 +11,7 @@ import { initCut4MoneyBypass } from './cut4money-bypass';
 import { initAdlinkflyLinksGo } from './adlinkfly-links-go';
 import { initAdlinkflyTokenPayload } from './adlinkfly-token-payload';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article';
-import { initUhdmoviesCloudContentScript } from './uhdmovies-cloud';
+import { initUhdmoviesMediatorPage } from '../sites/uhdmovies';
 import { initClipiRedirect } from './clipi-redirect';
 import { initCookiesceoCopy } from './cookiesceo-copy';
 import { initFastdlZipRedirect } from './fastdl-zip-redirect';
@@ -52,7 +52,7 @@ const INITS = [
   initFourDownloadDirectLinks,
   initXdmoviesMediatorPage,
   initMoviesModContentScript,
-  initUhdmoviesCloudContentScript,
+  initUhdmoviesMediatorPage,
   initAdlinkflyTokenPayload,
   initBitcotasksReadArticle,
   initClipiRedirect,
