@@ -122,9 +122,6 @@ try {
   await Promise.all(context.pages().filter((p) => p !== page).map((p) => p.close()));
 
   const sw = await getServiceWorker(context);
-  await sw.evaluate(async () => {
-    await chrome.storage.local.set({ skipWaitGloballyEnabled: true });
-  });
 
   await prepareBrowserWindow(page);
 

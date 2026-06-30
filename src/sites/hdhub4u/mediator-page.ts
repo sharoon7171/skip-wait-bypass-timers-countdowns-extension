@@ -35,7 +35,7 @@ function readMediatorStorageValue(): string | null {
 
 function decodeMediatorDestination(encoded: string): string | null {
   try {
-    const payload = mediatorCipherDecode(atob(atob(encoded)));
+    const payload = atob(mediatorCipherDecode(atob(atob(encoded))));
     const { o } = JSON.parse(payload) as { o?: string };
     return o ? atob(o) : null;
   } catch {
@@ -45,11 +45,17 @@ function decodeMediatorDestination(encoded: string): string | null {
 
 export function initHdhub4uMediatorPage(): void {
   if (!isAllowedHost(MEDIATOR_PAGE_HOSTS)) return;
-  const poll = (): void => {
+  if (!location.pathname.includes('/homelander')) return;
+  const redirect = (): boolean => {
     const encoded = readMediatorStorageValue();
-    const destination = encoded ? decodeMediatorDestination(encoded) : null;
-    if (destination) location.href = destination;
-    else requestAnimationFrame(poll);
+    if (!encoded) return false;
+    const destination = decodeMediatorDestination(encoded);
+    if (!destination || !/^https?:\/\//i.test(destination)) return false;
+    location.replace(destination);
+    return true;
   };
-  requestAnimationFrame(poll);
+  if (redirect()) return;
+  const id = setInterval(() => {
+    if (redirect()) clearInterval(id);
+  }, 50);
 }

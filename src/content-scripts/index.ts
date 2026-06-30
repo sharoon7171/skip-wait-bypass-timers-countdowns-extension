@@ -1,4 +1,3 @@
-import { watchExtensionEnabledToggleReload } from '../utils/extension-enabled';
 import { initFourDownloadDirectLinks } from './4download-direct-links';
 import { initXdmoviesDownloadLink } from './xdmovies-download-link';
 import { initXdmoviesLanding } from './xdmovies-landing';
@@ -87,7 +86,6 @@ function boot(): void {
     runCoomeetMainWorldAccelerator();
     return;
   }
-  watchExtensionEnabledToggleReload();
   if (isOnCoomeetIframeHost()) {
     initCoomeetIframeBootstrap();
     return;
