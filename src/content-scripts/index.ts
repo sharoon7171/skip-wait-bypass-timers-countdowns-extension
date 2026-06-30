@@ -17,6 +17,7 @@ import { initClipiRedirect } from './clipi-redirect';
 import { initCookiesceoCopy } from './cookiesceo-copy';
 import { initFastdlZipRedirect } from './fastdl-zip-redirect';
 import { initFclcRedirect } from './fclc-redirect';
+import { initFilePressDirectDownload } from '../sites/filepress';
 import {
   initHdhub4uLandingPageMed,
   initHdhub4uMediatorPage,
@@ -58,6 +59,7 @@ const INITS = [
   initClipiRedirect,
   initCookiesceoCopy,
   initFastdlZipRedirect,
+  initFilePressDirectDownload,
   initFclcRedirect,
   initHdhub4uLandingPageMed,
   initHdhub4uMediatorPage,

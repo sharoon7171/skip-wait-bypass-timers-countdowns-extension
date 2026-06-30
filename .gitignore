@@ -5,6 +5,8 @@ node_modules/
 dist/
 build/
 
+tmp/
+
 scripts/screenshot-url
 tsconfig.tsbuildinfo
 
