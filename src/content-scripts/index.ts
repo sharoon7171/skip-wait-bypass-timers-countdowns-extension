@@ -39,7 +39,7 @@ import { initSub2getRedirect } from './sub2get-redirect';
 import { initTeknoasianHqChain } from './teknoasian-hq-chain';
 import { initTinurlzSoftinfoFragment } from './tinurlz-softinfo-fragment';
 import { initUploadrarAutomation } from './uploadrar-countdown-bypass';
-import { initUsersdriveAutomation } from './usersdrive-countdown-bypass';
+import { initUsersdriveAutomation } from '../sites/usersdrive';
 
 const INITS = [
   initArolinksBypass,
