@@ -30,6 +30,10 @@ const safelinkFromNode = (node: Node): string | null => {
 const isWaitPage = (): boolean =>
   /[?&]go=/.test(location.search) || !!document.querySelector(WAIT_MARKERS);
 
+const requestVisibilitySpoof = (): void => {
+  chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
+};
+
 const findSafelinkUrl = (): string | null => {
   for (const script of document.scripts) {
     const url = safelinkInText(script.textContent ?? '');
@@ -69,21 +73,28 @@ export const showWpSafelinkRedirectOverlay = (): void => {
 
 const redirectSafelink = (url: string): void => {
   showWpSafelinkRedirectOverlay();
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => location.replace(resolveSafelinkUrl(url)));
-  });
+  location.replace(resolveSafelinkUrl(url));
 };
 
 export function initWpSafelinkRedirect(): void {
   if (!isAllowedHost(HOSTS)) return;
+  requestVisibilitySpoof();
   if (/[?&]go=/.test(location.search)) showWpSafelinkRedirectOverlay();
 
   let done = false;
+  let pollId = 0;
+
   const finish = (url: string): void => {
     if (done) return;
     done = true;
     mo.disconnect();
+    if (pollId) clearInterval(pollId);
     redirectSafelink(url);
+  };
+
+  const tryFind = (): void => {
+    const url = findSafelinkUrl();
+    if (url) finish(url);
   };
 
   const mo = new MutationObserver((muts) => {
@@ -96,12 +107,18 @@ export function initWpSafelinkRedirect(): void {
         }
       }
     }
+    tryFind();
   });
   mo.observe(document.documentElement, { childList: true, subtree: true });
 
   whenDomParsed(() => {
     if (isWaitPage()) showWpSafelinkRedirectOverlay();
-    const url = findSafelinkUrl();
-    if (url) finish(url);
+    tryFind();
   });
+
+  pollId = window.setInterval(() => {
+    if (done) return;
+    requestVisibilitySpoof();
+    tryFind();
+  }, 500);
 }

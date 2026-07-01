@@ -12,6 +12,10 @@ const isRealUrl = (s: string): boolean => s.startsWith('http://') || s.startsWit
 
 let ui: FullPageOverlay | null = null;
 
+const requestVisibilitySpoof = (): void => {
+  chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
+};
+
 const counterSec = (): number => {
   const html = document.documentElement.innerHTML;
   const m = html.match(/"counter_value"\s*:\s*(\d+)/);
@@ -51,6 +55,7 @@ const finishTimerUnlock = async (overlay: FullPageOverlay): Promise<string | nul
 
   const sec = counterSec();
   if (sec > 0) {
+    requestVisibilitySpoof();
     overlay.setStatus('Waiting for timer…');
     overlay.startCountdown(Date.now() + sec * 1000);
     const endAt = Date.now() + (sec + 2) * 1000;
@@ -100,6 +105,7 @@ const runWhenNotLoading = (run: () => void): void => {
 
 const onCaptchaPage = (form: HTMLFormElement, overlay: FullPageOverlay): void => {
   if (!form.querySelector('[name="g-recaptcha-response"]')) return;
+  requestVisibilitySpoof();
   overlay.setStatus('Completing verification…');
   const tick = (): void => {
     if (hasCaptchaToken(form, RECAPTCHA_NAMES)) form.submit();
@@ -124,6 +130,7 @@ const onTimerPage = async (posted: { done: boolean }, overlay: FullPageOverlay):
 };
 
 const startAdlinkflyLinksGo = (): void => {
+  requestVisibilitySpoof();
   const overlay = mountUi();
   const posted = { done: false };
   let finished = false;
@@ -141,7 +148,6 @@ const startAdlinkflyLinksGo = (): void => {
   };
 
   const observer = new MutationObserver(run);
-  chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
   run();
   observer.observe(document.documentElement, {
     attributeFilter: ['href'],
@@ -166,6 +172,7 @@ const startAdlinkflyLinksGo = (): void => {
 };
 
 export function initAdlinkflyLinksGo(): void {
+  if (hasLinksGoHint()) requestVisibilitySpoof();
   let engaged = false;
   const tryStart = (): void => {
     if (engaged || arolinksBypassActive() || !isAdlinkflyLinksGoShell()) return;
