@@ -68,8 +68,11 @@ async function runMediatorPageFlow(code: string, fingerprint: string): Promise<v
   const ui = createFullPageOverlay({
     id: OVERLAY_ID,
     brand: 'Skip Wait',
-    noteHtml:
-      '<strong>Hang tight — getting your download ready.</strong> You don’t need to tap anything on the page. We’ll open your link automatically when it’s done.',
+    note: {
+      lead: 'Hang tight — getting your download ready.',
+      detail:
+        "You don't need to tap anything on the page. We'll open your link automatically when it's done.",
+    },
     status: 'Getting things ready…',
     countdownLabel: 'Your link opens in',
     countdownHint: 'If a checkbox appears below, tap it to confirm you’re human',
@@ -81,9 +84,11 @@ async function runMediatorPageFlow(code: string, fingerprint: string): Promise<v
     const d = ev.data as PhaseMessage;
     if (d?.source !== MSG_SOURCE || !d.phase) return;
     if (d.phase === 'parallel') {
-      ui.setNote(
-        '<strong>Almost there.</strong> If a checkbox appears below, tap it to confirm you’re human. Otherwise, just wait — your link opens here automatically.',
-      );
+      ui.setNote({
+        lead: 'Almost there.',
+        detail:
+          "If a checkbox appears below, tap it to confirm you're human. Otherwise, just wait — your link opens here automatically.",
+      });
       ui.setStatus('Waiting for your link to open…');
       ui.startCountdown(d.waitEndTs!);
       return;

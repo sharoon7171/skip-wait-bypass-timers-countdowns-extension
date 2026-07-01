@@ -1,8 +1,7 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { cardButton, createInlineCard } from '../injected-ui/card';
 
 const HOSTS = ['cookiesceo.com'] as const;
-const CARD_ID = 'skipwait-cookiesceo-card';
+const ACTIONS_ID = 'skipwait-cookiesceo-actions';
 const SESSION_PASTE_RE = /session_paste\s+([A-Za-z0-9+/=]+)/;
 const DOWNLOAD_RE = /["']([^"']*-download)\/?"?["']/;
 
@@ -28,58 +27,53 @@ function extractCookie(html: string): string | null {
 
 async function run(): Promise<void> {
   const btn = document.getElementById('download-btn');
-  if (!btn?.parentElement || document.getElementById(CARD_ID)) return;
+  if (!btn?.parentElement || document.getElementById(ACTIONS_ID)) return;
 
-  const card = createInlineCard({
-    id: CARD_ID,
-    badge: 'Skip Wait',
-    title: 'Cookies ready',
-    description: 'Timer skipped. Cookie loaded by the extension - copy below, no redirect.',
-    status: 'Fetching…',
-    actionsHtml: cardButton('skipwait-copy', 'Copy cookie'),
-  });
-  card.button('skipwait-copy')!.style.display = 'none';
-  btn.parentElement.appendChild(card.root);
-  card.root.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const wrap = document.createElement('div');
+  wrap.id = ACTIONS_ID;
+  const copyBtn = document.createElement('button');
+  copyBtn.type = 'button';
+  copyBtn.id = 'skipwait-copy';
+  copyBtn.textContent = 'Copy cookie';
+  copyBtn.style.display = 'none';
+  wrap.appendChild(copyBtn);
+  btn.parentElement.appendChild(wrap);
 
-  const copyBtn = card.button('skipwait-copy')!;
   let cookieText: string | null = null;
-
   copyBtn.onclick = async () => {
     if (!cookieText) return;
     try {
       await navigator.clipboard.writeText(cookieText);
       copyBtn.textContent = 'Copied';
-      setTimeout(() => { copyBtn.textContent = 'Copy cookie'; }, 2000);
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy cookie';
+      }, 2000);
     } catch {
       copyBtn.textContent = 'Copy failed';
     }
   };
 
   const url = getDownloadUrl();
-  if (!url) {
-    card.setStatus('Download URL not found.', 'error');
-    return;
-  }
+  if (!url) return;
 
   try {
     const res = await fetch(url, { cache: 'no-store', credentials: 'same-origin' });
     const html = await res.text();
     cookieText = extractCookie(html);
     if (cookieText) {
-      card.setStatus('Ready. Click the button to copy.', 'success');
-      copyBtn.style.display = 'inline-flex';
-    } else {
-      card.setStatus('Cookie not found on download page.', 'error');
+      copyBtn.style.display = 'inline-block';
+      try {
+        await navigator.clipboard.writeText(cookieText);
+      } catch {}
     }
-  } catch {
-    card.setStatus('Failed to fetch cookie.', 'error');
-  }
+  } catch {}
 }
 
 export function initCookiesceoCopy(): void {
   if (!isAllowedHost(HOSTS)) return;
-  const exec = (): void => { run(); };
+  const exec = (): void => {
+    run();
+  };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', exec);
   else exec();
 }

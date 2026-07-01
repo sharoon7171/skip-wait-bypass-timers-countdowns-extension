@@ -26,16 +26,6 @@ import {
   renderArolinksTimerPage,
   revealTimerLinks,
 } from './arolinks/page';
-import { createBypassOverlay } from '../injected-ui/overlay';
-
-const { mountOverlay: mountArolinksOverlay } = createBypassOverlay({
-  id: 'skip-wait-arolinks-overlay',
-  activeClass: 'sw-arolinks-active',
-  sessionKey: 'sw-arolinks-overlay',
-  brand: 'Skip Wait',
-});
-import type { BypassOverlay } from '../injected-ui/overlay';
-
 const HOSTS = [
   'arolinks.com',
   'deltastudy.site',
@@ -48,8 +38,7 @@ const BYPASS_COOKIES = [
 const LANDING_MAX = 9000;
 const ARTICLE_MIN = 35_000;
 const LANDING_POLL_MS = 2500;
-const VERIFY_WAIT_SEC = 10;
-const VERIFY_WAIT_MS = VERIFY_WAIT_SEC * 1000;
+const VERIFY_WAIT_MS = 10_000;
 const UNLOCK_BURST_MS = 12_000;
 const UNLOCK_TICK_MS = 150;
 
@@ -223,10 +212,9 @@ function triggerVerify(): void {
   if (btn instanceof HTMLElement) btn.click();
 }
 
-async function completeMediatorArticle(ui: BypassOverlay): Promise<void> {
+async function completeMediatorArticle(): Promise<void> {
   chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
   seedMediatorCookies();
-  void ui.startCountdown(VERIFY_WAIT_SEC, 'Finishing verification…');
   const end = Date.now() + VERIFY_WAIT_MS;
   while (Date.now() < end) {
     const cd = document.getElementById('countdown');
@@ -244,7 +232,6 @@ async function completeMediatorArticle(ui: BypassOverlay): Promise<void> {
 function openDestination(url: string): void {
   if (navigating) return;
   navigating = true;
-  mountArolinksOverlay().releasePage();
   void clearPendingUnlock();
   guardOff();
   void clearArolinksChain();
@@ -271,7 +258,6 @@ async function loadTimerShellOnPage(
   try {
     const html = await fetchArolinksAliasPage(alias, referer);
     if (!isArolinksTimerShell(html)) return false;
-    mountArolinksOverlay().remove();
     renderArolinksTimerPage(html);
     await sleep(200);
     const dest = await unlockDestination(html, aroUrl);
@@ -289,25 +275,19 @@ async function loadTimerShellOnPage(
 async function runUnlockVisit(alias: string, chain: ArolinksChain): Promise<void> {
   if (unlockVisitActive) return;
   unlockVisitActive = true;
-  const ui = mountArolinksOverlay();
   try {
     linksGoPosted = false;
     const referer = await refererForUnlock(chain);
     if (!referer) {
-      ui.setPhase('Almost there', 'Complete the verification steps on the previous page.');
-      ui.setError('Return to the article page and wait for verification to finish.');
-      mountArolinksOverlay().releasePage();
       return;
     }
     const aroUrl = `https://arolinks.com/${alias}`;
-    ui.setPhase('Opening your link', 'Loading the download page…');
 
     const end = Date.now() + UNLOCK_BURST_MS;
     if (await loadTimerShellOnPage(alias, referer, aroUrl)) return;
 
     while (Date.now() < end && !navigating) {
       if (isArolinksTimerShell()) {
-        ui.remove();
         revealTimerLinks();
         const direct = deltaUrlFromDom();
         if (direct) {
@@ -321,10 +301,6 @@ async function runUnlockVisit(alias: string, chain: ArolinksChain): Promise<void
       if (await loadTimerShellOnPage(alias, referer, aroUrl)) return;
       await sleep(UNLOCK_TICK_MS);
     }
-
-    ui.setPhase('Could not open link', 'The download page did not load in time.');
-    ui.setError('Reload the same arolinks URL in this tab after finishing all verification steps.');
-    mountArolinksOverlay().releasePage();
   } finally {
     unlockVisitActive = false;
   }
@@ -382,8 +358,7 @@ async function readmoreTargets(articleUrl: string): Promise<string[]> {
   }
 }
 
-async function followLanding(ui: BypassOverlay): Promise<void> {
-  ui.setPhase('Loading article', 'Opening the verification page…');
+async function followLanding(): Promise<void> {
   const end = Date.now() + LANDING_POLL_MS;
   while (Date.now() < end) {
     const target = jsRedirectTarget(pageHtml(), location.href);
@@ -402,11 +377,9 @@ async function goToArolinksUnlock(
   chain: ArolinksChain,
   articleUrl: string,
   nextHop: number,
-  ui: BypassOverlay,
   verified: boolean,
 ): Promise<void> {
-  ui.setPhase('Almost done', 'Returning to your download link…');
-  if (!verified) await completeMediatorArticle(ui);
+  if (!verified) await completeMediatorArticle();
   await markPendingUnlock(alias, articleUrl);
   await writeArolinksChain(
     chainPayload(alias, chain, { phase: 'unlock', hops: nextHop, lastArticleUrl: articleUrl }),
@@ -417,20 +390,13 @@ async function goToArolinksUnlock(
   window.location.replace(`https://arolinks.com/${alias}`);
 }
 
-async function runReadmoreHop(
-  chain: ArolinksChain,
-  alias: string,
-  ui: BypassOverlay,
-): Promise<void> {
+async function runReadmoreHop(chain: ArolinksChain, alias: string): Promise<void> {
   const articleUrl = location.href;
   const nextHop = chain.hops + 1;
-  const stepTotal = MIN_MEDIATOR_HOPS;
 
   if (articleHopDone(nextHop)) return;
 
-  ui.setPhase(`Verification ${nextHop} of ${stepTotal}`, location.hostname.replace(/^www\./, ''));
-  await completeMediatorArticle(ui);
-  ui.setDetail('Loading next step…');
+  await completeMediatorArticle();
   const targets = await readmoreTargets(articleUrl);
 
   if (!targets.length) {
@@ -444,7 +410,7 @@ async function runReadmoreHop(
   const next = mediators[0];
 
   if (nextHop >= MIN_MEDIATOR_HOPS) {
-    await goToArolinksUnlock(alias, chain, articleUrl, nextHop, ui, true);
+    await goToArolinksUnlock(alias, chain, articleUrl, nextHop, true);
     return;
   }
 
@@ -464,22 +430,21 @@ async function runReadmoreHop(
 }
 
 async function runMediatorFlow(chain: ArolinksChain, alias: string): Promise<void> {
-  const ui = mountArolinksOverlay();
   seedMediatorCookies();
 
   if (chain.phase === 'unlock' && isMediatorArticle()) {
     const referer = chain.lastArticleUrl ?? (await readPendingUnlock())?.referer;
-    await goToArolinksUnlock(alias, chain, referer ?? location.href, chain.hops, ui, false);
+    await goToArolinksUnlock(alias, chain, referer ?? location.href, chain.hops, false);
     return;
   }
 
   if (isMediatorLanding()) {
-    await followLanding(ui);
+    await followLanding();
     return;
   }
 
   if (isMediatorArticle()) {
-    await runReadmoreHop(chain, alias, ui);
+    await runReadmoreHop(chain, alias);
   }
 }
 
@@ -501,10 +466,6 @@ async function runArolinksFlow(): Promise<void> {
       await runUnlockVisit(alias, chain);
       return;
     }
-    mountArolinksOverlay().setPhase(
-      'Starting verification',
-      'You will be redirected to complete a few quick steps.',
-    );
     guardOff();
     await runFirstArolinksVisit(alias, chain);
     return;
@@ -517,7 +478,6 @@ async function runArolinksFlow(): Promise<void> {
   }
 
   if (isArolinksTimerShell()) {
-    mountArolinksOverlay().remove();
     guardOff();
     revealTimerLinks();
     const direct = deltaUrlFromDom();

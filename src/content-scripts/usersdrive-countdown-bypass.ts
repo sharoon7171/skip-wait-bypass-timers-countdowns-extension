@@ -1,6 +1,5 @@
 import { isAllowedHost } from '../utils/domain-check';
 import { isCloudflareHumanVerificationDone } from '../utils/cloudflare-verifier';
-import { createBannerOverlay } from '../injected-ui/banner-overlay';
 
 const HOSTS = ['usersdrive.com'] as const;
 const FORM_SELECTOR = 'form .cf-turnstile';
@@ -70,22 +69,11 @@ function startDownload(url: string): void {
 
 async function run(): Promise<void> {
   const form = await waitForForm();
-  const overlay = createBannerOverlay({
-    id: 'skipwait-usersdrive-banner',
-    badge: 'Skip Wait',
-    title: 'Preparing your download',
-    description:
-      'Cloudflare is verifying in the background. If a checkbox appears below, please tap it — everything else on the page is locked. Your file then starts automatically: no countdown, no second page.',
-    status: 'Waiting for Cloudflare verification…',
-  });
   const lift = liftTurnstileWidget();
   await waitForCloudflareVerification(form);
   lift.disconnect();
-  overlay.setStatus('Verification complete. Generating direct link…');
   const link = await fetchDirectLink(form);
-  if (!link) return overlay.setStatus('Could not generate a direct link for this file.', 'error');
-  overlay.setStatus('Your download has started. You can close this tab.', 'success');
-  startDownload(link);
+  if (link) startDownload(link);
 }
 
 export function initUsersdriveAutomation(): void {

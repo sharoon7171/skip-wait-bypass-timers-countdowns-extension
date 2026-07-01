@@ -5,8 +5,10 @@ import { hasCaptchaToken } from '../../utils/captcha-verifier';
 const OVERLAY_ID = 'skip-wait-adlinkfly-overlay';
 const LINKS_GO_SHELL_SEL = '#link-view,#go-link,form[action*="/links/go"],a.get-link';
 const RECAPTCHA_NAMES = ['g-recaptcha-response'];
-const NOTE =
-  '<strong>Hang tight — unlocking your link.</strong> You don\'t need to tap anything on the page.';
+const NOTE = {
+  lead: 'Hang tight — unlocking your link.',
+  detail: "You don't need to tap anything on the page.",
+} as const;
 
 const isRealUrl = (s: string): boolean => s.startsWith('http://') || s.startsWith('https://');
 
@@ -30,7 +32,7 @@ const mountUi = (): FullPageOverlay => {
   ui = createFullPageOverlay({
     id: OVERLAY_ID,
     brand: 'Skip Wait',
-    noteHtml: NOTE,
+    note: NOTE,
     status: 'Getting things ready…',
     countdownLabel: 'Your link opens in',
   });

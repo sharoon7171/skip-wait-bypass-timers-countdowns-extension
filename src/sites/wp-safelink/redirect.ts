@@ -3,8 +3,10 @@ import { isAllowedHost, whenDomParsed } from '../../utils/domain-check';
 
 export const WP_SAFELINK_OVERLAY_ID = 'skip-wait-wp-safelink-overlay';
 
-const NOTE =
-  '<strong>Hang tight — unlocking your link.</strong> You don\'t need to tap anything on the page.';
+const NOTE = {
+  lead: 'Hang tight — unlocking your link.',
+  detail: "You don't need to tap anything on the page.",
+} as const;
 
 const HOSTS = [
   'demo-safelink.themeson.com',
@@ -65,7 +67,7 @@ export const showWpSafelinkRedirectOverlay = (): void => {
   createFullPageOverlay({
     id: WP_SAFELINK_OVERLAY_ID,
     brand: 'Skip Wait',
-    noteHtml: NOTE,
+    note: NOTE,
     status: 'Redirecting now…',
     countdownLabel: 'Your link opens in',
   });

@@ -5,14 +5,12 @@ import {
   shortxResultKey,
   type ShortxFetchResult,
 } from './shortxlinks-chain';
-import { createProgressOverlay, type ProgressOverlay } from '../injected-ui/progress-overlay';
 
 const HOSTS = [
   'shortxlinks.com',
   'flexthecar.com',
   'nkrmusic.in.net',
 ] as const;
-const OVERLAY_ID = 'skip-wait-shortx-overlay';
 const AD_WAIT_MS = 22_000;
 const UNLOCK_POLL_MS = 250;
 const SESSION_START = 'sw-shortx-start-url';
@@ -21,12 +19,15 @@ const SESSION_AD_TIME = 'sw-shortx-ad-time';
 
 type StoredResult = { tokenUrl: string; adTime: number };
 
-let overlay: ProgressOverlay | null = null;
 let flowRunning = false;
 let flowStarted = false;
 
 function allowedHosts(): readonly string[] {
   return HOSTS;
+}
+
+function requestVisibilitySpoof(): void {
+  chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
 }
 
 function persistStartFromLocation(): void {
@@ -147,19 +148,6 @@ function shouldRun(): boolean {
   return inChain;
 }
 
-function mountOverlay(): ProgressOverlay {
-  if (overlay) return overlay;
-  chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
-  overlay = createProgressOverlay({
-    id: OVERLAY_ID,
-    noteHtml:
-      '<strong>Hang tight — getting your link ready.</strong> You don\'t need to tap anything. We\'ll open your destination automatically.',
-    status: 'Verifying in the background…',
-  });
-  document.documentElement.appendChild(overlay.root);
-  return overlay;
-}
-
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
@@ -187,10 +175,9 @@ async function requestFetchChain(startUrl: string): Promise<ShortxFetchResult> {
   return { ok: false, error: 'verification timed out' };
 }
 
-async function fetchVerification(startUrl: string, ui: ProgressOverlay): Promise<StoredResult | { ok: false; error: string }> {
+async function fetchVerification(startUrl: string): Promise<StoredResult | { ok: false; error: string }> {
   const stored = readStoredResult();
   if (stored) return stored;
-  ui.setStatus('Running verification in the background…');
   const result = await requestFetchChain(startUrl);
   if (!result.ok) return result;
   storeResult(result.tokenUrl, result.adTime);
@@ -233,8 +220,7 @@ async function postLinksGo(): Promise<string | null> {
   }
 }
 
-async function finishOnTimerPage(ui: ProgressOverlay): Promise<boolean> {
-  ui.setStatus('Opening your destination…');
+async function finishOnTimerPage(): Promise<boolean> {
   let posted = false;
   for (let i = 0; i < 120; i++) {
     const link = document.querySelector<HTMLAnchorElement>('a.get-link');
@@ -255,21 +241,16 @@ async function finishOnTimerPage(ui: ProgressOverlay): Promise<boolean> {
     }
     await sleep(250);
   }
-  ui.setError('Could not generate link. Try refreshing.');
   flowStarted = false;
   return false;
 }
 
-async function waitForUnlock(tokenUrl: string, adTime: number, ui: ProgressOverlay): Promise<void> {
+async function waitForUnlock(tokenUrl: string, adTime: number): Promise<void> {
   const endTs = adTime + AD_WAIT_MS;
-  ui.setStatus('Waiting for your link to unlock…');
-  ui.startCountdown(endTs);
   while (Date.now() < endTs + 8_000) {
     if (await isTokenUnlocked(tokenUrl)) {
-      ui.stopCountdown();
-      ui.setStatus('Opening your link…');
       if (normalizePageUrl(location.href) === normalizePageUrl(tokenUrl)) {
-        await finishOnTimerPage(ui);
+        await finishOnTimerPage();
         return;
       }
       window.location.replace(tokenUrl);
@@ -277,10 +258,8 @@ async function waitForUnlock(tokenUrl: string, adTime: number, ui: ProgressOverl
     }
     await sleep(UNLOCK_POLL_MS);
   }
-  ui.stopCountdown();
-  ui.setStatus('Opening your link…');
   if (normalizePageUrl(location.href) === normalizePageUrl(tokenUrl)) {
-    await finishOnTimerPage(ui);
+    await finishOnTimerPage();
     return;
   }
   window.location.replace(tokenUrl);
@@ -290,7 +269,7 @@ async function runFlow(): Promise<void> {
   if (flowRunning || flowStarted || !shouldRun()) return;
   flowRunning = true;
   flowStarted = true;
-  const ui = mountOverlay();
+  requestVisibilitySpoof();
   try {
     persistStartFromLocation();
     const stored = readStoredResult();
@@ -298,23 +277,21 @@ async function runFlow(): Promise<void> {
       isShortxFinalTimerPage() ||
       (stored && normalizePageUrl(location.href) === normalizePageUrl(stored.tokenUrl))
     ) {
-      await finishOnTimerPage(ui);
+      await finishOnTimerPage();
       return;
     }
     if (isTooEarlyShortx() && stored) {
-      await waitForUnlock(stored.tokenUrl, stored.adTime, ui);
+      await waitForUnlock(stored.tokenUrl, stored.adTime);
       return;
     }
     const startUrl = startUrlFromPage();
     if (!startUrl) return;
-    const result = await fetchVerification(startUrl, ui);
+    const result = await fetchVerification(startUrl);
     if ('ok' in result && result.ok === false) {
-      ui.setError(result.error);
-      ui.setStatus('Verification failed.');
       flowStarted = false;
       return;
     }
-    await waitForUnlock((result as StoredResult).tokenUrl, (result as StoredResult).adTime, ui);
+    await waitForUnlock((result as StoredResult).tokenUrl, (result as StoredResult).adTime);
   } finally {
     flowRunning = false;
   }
@@ -323,10 +300,10 @@ async function runFlow(): Promise<void> {
 export function initShortxlinksSafelinkChain(): void {
   if (window !== window.top) return;
   persistStartFromLocation();
-  if (shouldRunEager()) mountOverlay();
+  if (shouldRunEager()) requestVisibilitySpoof();
   const start = (): void => {
     if (!shouldRun()) return;
-    mountOverlay();
+    requestVisibilitySpoof();
     void runFlow();
   };
   if (shouldRunEager()) start();
@@ -335,5 +312,5 @@ export function initShortxlinksSafelinkChain(): void {
 
 if (typeof window !== 'undefined' && window === window.top) {
   persistStartFromLocation();
-  if (shouldRunEager()) mountOverlay();
+  if (shouldRunEager()) requestVisibilitySpoof();
 }

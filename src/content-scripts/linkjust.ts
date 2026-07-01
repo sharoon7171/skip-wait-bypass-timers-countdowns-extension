@@ -21,47 +21,8 @@ import {
   type LinkjustChain,
 } from './linkjust/chain';
 import { isLinkjustMediatorShell } from './linkjust/mediator';
-import { createBypassOverlay, type BypassOverlayCopy } from '../injected-ui/overlay';
-
-const {
-  readOverlaySession: readLinkjustOverlaySession,
-  clearOverlaySession: clearLinkjustOverlaySession,
-  restoreOverlayFromSession: restoreLinkjustOverlayFromSession,
-  mountOverlay: mountLinkjustOverlay,
-} = createBypassOverlay({
-  id: 'skip-wait-linkjust-overlay',
-  activeClass: 'sw-linkjust-active',
-  sessionKey: 'sw-linkjust-overlay',
-  brand: 'Skip Wait · Linkjust',
-  countdownLabel: 'seconds left on timer',
-});
-
-type OverlayCopy = BypassOverlayCopy;
 import { dismissLinkjustAdblockOverlay, nudgeLinkjustTimerUi } from './linkjust/timer-ui';
 import { finishLinkjustUnlock, isLinkjustUnlockPage } from './linkjust/unlock';
-
-const COPY = {
-  entry: {
-    title: 'Step 1 · Opening verification',
-    detail: 'Loading the Linkjust article page.',
-  },
-  article: {
-    title: 'Step 2 · Skipping article timer',
-    detail: 'Following the Linkjust article chain.',
-  },
-  unlock: {
-    title: 'Step 3 · Unlocking your link',
-    detail: 'Fetching your URL from Linkjust.',
-  },
-  destination: {
-    title: 'Done · Opening your link',
-    detail: 'Redirecting to your destination now.',
-  },
-  failed: {
-    title: 'Could not finish',
-    detail: 'Reload the Linkjust short link and try again.',
-  },
-} as const;
 
 const OBS_HOP: MutationObserverInit = {
   attributeFilter: ['href', 'style', 'class', 'disabled'],
@@ -74,7 +35,6 @@ let flowRunning = false;
 let navigating = false;
 let hopLoopRunning = false;
 let cachedChain: LinkjustChain = { ...EMPTY_LINKJUST_CHAIN };
-let overlay: ReturnType<typeof mountLinkjustOverlay> | null = restoreLinkjustOverlayFromSession();
 
 function isLinkjustRootHost(): boolean {
   return isLinkjustHost() && isAllowedHost(linkjustRoots()) && !!linkjustAliasFromUrl(location.href);
@@ -82,11 +42,6 @@ function isLinkjustRootHost(): boolean {
 
 function requestVisibilitySpoof(): void {
   chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
-}
-
-function ensureOverlay(copy: OverlayCopy): void {
-  overlay ??= mountLinkjustOverlay();
-  overlay.setPhase(copy.title, copy.detail);
 }
 
 function chainPayload(alias: string, chain: LinkjustChain | null): LinkjustChain {
@@ -103,18 +58,15 @@ function chainPayload(alias: string, chain: LinkjustChain | null): LinkjustChain
   };
 }
 
-function go(url: string, copy: OverlayCopy): void {
+function go(url: string): void {
   navigating = true;
-  ensureOverlay(copy);
   window.location.replace(url);
 }
 
 function goDestination(url: string): void {
   if (navigating) return;
   navigating = true;
-  ensureOverlay(COPY.destination);
   void clearLinkjustChain();
-  clearLinkjustOverlaySession();
   window.location.replace(url);
 }
 
@@ -136,10 +88,10 @@ function pickHop() {
   return extractLinkjustHop(alias, cachedChain.visitedPaths);
 }
 
-function goShortenerUnlock(copy: OverlayCopy = COPY.unlock): void {
+function goShortenerUnlock(): void {
   const url = shortenerUnlockUrl(cachedChain);
   if (!url) return;
-  go(url, copy);
+  go(url);
 }
 
 function followHop(hop: NonNullable<ReturnType<typeof extractLinkjustHop>>): void {
@@ -150,7 +102,7 @@ function followHop(hop: NonNullable<ReturnType<typeof extractLinkjustHop>>): voi
   }
 
   if (hop.kind === 'shortener') {
-    go(hop.url, COPY.unlock);
+    go(hop.url);
     return;
   }
 
@@ -160,14 +112,13 @@ function followHop(hop: NonNullable<ReturnType<typeof extractLinkjustHop>>): voi
   }
 
   void syncChain((chain) => markArticleVisited(chain)).then(() => {
-    go(hop.url, COPY.article);
+    go(hop.url);
   });
 }
 
 function runHopLoop(): void {
   if (hopLoopRunning || navigating) return;
   hopLoopRunning = true;
-  ensureOverlay(COPY.article);
 
   let done = false;
   const tryGo = (): boolean => {
@@ -176,7 +127,7 @@ function runHopLoop(): void {
     const hop = pickHop();
     if (shouldReturnToShortener(cachedChain, hop)) {
       done = true;
-      goShortenerUnlock(COPY.article);
+      goShortenerUnlock();
       return true;
     }
     if (!hop) return false;
@@ -221,22 +172,16 @@ function runHopLoop(): void {
 }
 
 async function runLinkjustUnlockFlow(): Promise<void> {
-  ensureOverlay(COPY.unlock);
   requestVisibilitySpoof();
-  const ui = overlay ?? mountLinkjustOverlay();
-  const dest = await finishLinkjustUnlock(location.href, (sec) => ui.startCountdown(sec));
+  const dest = await finishLinkjustUnlock(location.href);
   if (dest) {
     goDestination(dest);
-    return;
   }
-  ui.setError(COPY.failed.detail);
 }
 
 async function runLinkjustShortenerFlow(): Promise<void> {
   const alias = linkjustAliasFromUrl(location.href);
   if (!alias) return;
-
-  ensureOverlay(isLinkjustUnlockPage() ? COPY.unlock : COPY.entry);
 
   const apiDest = destinationFromLinkjustApiUrl(location.href);
   if (apiDest) {
@@ -257,11 +202,8 @@ async function runLinkjustShortenerFlow(): Promise<void> {
 
   const hop = await fetchLinkjustFirstHop(alias, cachedChain.shortenerHost ?? 'linkjust.com');
   if (hop) {
-    go(hop, COPY.entry);
-    return;
+    go(hop);
   }
-
-  overlay?.setError(COPY.failed.detail);
 }
 
 async function runLinkjustArticleFlow(): Promise<void> {
@@ -307,30 +249,16 @@ async function runFlow(): Promise<void> {
   }
 }
 
-function bootOverlay(): void {
-  if (readLinkjustOverlaySession()) {
-    overlay = restoreLinkjustOverlayFromSession();
-    return;
-  }
-  if (isLinkjustRootHost()) {
-    ensureOverlay(isLinkjustUnlockPage() ? COPY.unlock : COPY.entry);
-    return;
-  }
-  if (isLinkjustMediatorShell()) ensureOverlay(COPY.article);
-}
-
 export function initLinkjust(): void {
   if (window !== window.top) return;
 
-  if (isLinkjustRootHost() || isLinkjustMediatorShell() || readLinkjustOverlaySession()) {
-    bootOverlay();
+  if (isLinkjustRootHost() || isLinkjustMediatorShell()) {
     requestVisibilitySpoof();
   }
 
   void readLinkjustChain().then((chain) => {
     cachedChain = chain;
     if (chain.alias && isLinkjustMediatorShell()) {
-      bootOverlay();
       requestVisibilitySpoof();
     }
   });

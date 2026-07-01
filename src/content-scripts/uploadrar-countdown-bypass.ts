@@ -1,10 +1,7 @@
 import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
-import { createStatusOverlay } from '../injected-ui/status-overlay';
 
 const HOSTS = ['uploadrar.com'] as const;
 const CDN_LINK_RE = /<a\s+[^>]*href=["']([^"']+)["'][^>]*>\s*(?:<[^>]*>\s*)*Click\s+here\s+to\s+download/i;
-const FILE_SIZE_RE = /\bsize\s*:?\s*([\d.,]+\s*[KMGT]?B)/i;
-const OVERLAY_ID = 'skip-wait-uploadrar-overlay';
 
 function findForm(): HTMLFormElement | null {
   return document.querySelector<HTMLInputElement>('form input[name="op"][value^="download"]')?.form ?? null;
@@ -33,16 +30,8 @@ function startDownload(url: string): void {
 async function run(): Promise<void> {
   const form = findForm();
   if (!form) return;
-  const name = form.querySelector<HTMLInputElement>('input[name="fname"]')?.value?.trim() || null;
-  const size = document.body?.textContent?.match(FILE_SIZE_RE)?.[1]?.trim() ?? null;
-  const overlay = createStatusOverlay({
-    id: OVERLAY_ID,
-    file: name ? { name, size } : null,
-  });
   const url = await fetchDirectLink(form);
-  if (!url) return overlay.setStatus('Could not generate a direct link.', 'err');
-  overlay.setStatus('Download started. You can close this tab.', 'ok');
-  startDownload(url);
+  if (url) startDownload(url);
 }
 
 export function initUploadrarAutomation(): void {

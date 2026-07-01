@@ -1,5 +1,4 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { createInlineCard } from '../injected-ui/card';
 
 const HOSTS = [
   'onlinegiftools.com',
@@ -9,7 +8,6 @@ const HOSTS = [
   'onlinetexttools.com',
   'onlinetools.com',
 ] as const;
-const CARD_ID = 'skipwait-onlinetools-card';
 const DATA_HIJACKED = 'data-skipwait-hijacked';
 const SELECTORS = {
   canvas: '#tool-output .side-box',
@@ -82,10 +80,9 @@ function hijack(btn: Element, fn: () => void): void {
 
 function run(): void {
   const toolOutput = document.querySelector(SELECTORS.toolOutput);
-  const twoColRow = toolOutput?.parentElement;
   const copyBtn = document.querySelector(SELECTORS.copyBtn);
   const downloadBtn = toolOutput?.querySelector(SELECTORS.downloadBtn);
-  if (!twoColRow || !copyBtn) return;
+  if (!toolOutput || !copyBtn) return;
 
   const host = window.location.host;
   const name = /^local/.test(host) ? host.split('.')[1] : host.split('.')[0];
@@ -120,16 +117,6 @@ function run(): void {
     else toast('No output to copy');
   };
 
-  if (!document.getElementById(CARD_ID)) {
-    const card = createInlineCard({
-      id: CARD_ID,
-      badge: 'Skip Wait extension',
-      description:
-        'We made the <strong>Copy</strong> and <strong>Download</strong> buttons work in one click - no pop-ups, no waiting. Just use the buttons below.',
-    });
-    twoColRow.insertBefore(card.root, twoColRow.firstChild);
-  }
-
   hijack(copyBtn, copy);
   if (downloadBtn) hijack(downloadBtn, download);
 }
@@ -142,7 +129,7 @@ export function initOnlinetoolsDirectDownload(): void {
     run();
     const cb = document.querySelector(SELECTORS.copyBtn);
     const db = toolOutput.querySelector(SELECTORS.downloadBtn);
-    if (document.getElementById(CARD_ID) && cb?.hasAttribute(DATA_HIJACKED) && (!db || db.hasAttribute(DATA_HIJACKED))) observer.disconnect();
+    if (cb?.hasAttribute(DATA_HIJACKED) && (!db || db.hasAttribute(DATA_HIJACKED))) observer.disconnect();
   };
   const observer = new MutationObserver(check);
   const start = (): void => {
