@@ -1,4 +1,4 @@
-import { isAllowedHost } from '../utils/domain-check';
+import { isAllowedHost } from '../../utils/domain-check';
 
 const HOSTS = [
   'episodes.modpro.blog',

@@ -11,7 +11,6 @@ import { initCut4MoneyBypass } from './cut4money-bypass';
 import { initAdlinkflyLinksGo } from '../sites/adlinkfly';
 import { initAdlinkflyTokenPayload } from './adlinkfly-token-payload';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article';
-import { initUhdmoviesMediatorPage } from '../sites/uhdmovies';
 import { initClipiRedirect } from '../sites/clipi';
 import { initCookiesceoCopy } from './cookiesceo-copy';
 import { initFastdlZipRedirect } from './fastdl-zip-redirect';
@@ -25,14 +24,15 @@ import {
 } from '../sites/hdhub4u';
 import { initKitokolaDlGetBypass } from './kitokola-dl-get-bypass';
 import { initLinkjust } from './linkjust';
-import { initMoviesModContentScript } from './movies-mod';
+import { initMoviesModContentScript } from '../sites/movies-mod';
 import { initOnhaxpkCopy } from '../sites/onhaxpk';
 import { initOnlinetoolsDirectDownload } from '../sites/onlinetools';
 import { initPrmoviesRedirect } from '../sites/prmovies';
+import { initSidMediatorBypass } from '../sites/sid-mediator';
 import { initRomsfunDownloadInstant } from './romsfun-download-instant';
 import { initShortxlinksSafelinkChain } from './shortxlinks-safelink-chain';
 import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogger';
-import { initShrtflyRedirect } from './shrtfly-redirect';
+import { initShrtslugRedirect } from '../sites/shrtslug';
 import { initStbemuiptvcodesWpsafelink, initWpSafelinkRedirect } from '../sites/wp-safelink';
 import { initSub2getRedirect } from '../sites/sub2get';
 import { initTeknoasianHqChain } from './teknoasian-hq-chain';
@@ -51,7 +51,7 @@ const INITS = [
   initFourDownloadDirectLinks,
   initXdmoviesMediatorPage,
   initMoviesModContentScript,
-  initUhdmoviesMediatorPage,
+  initSidMediatorBypass,
   initAdlinkflyTokenPayload,
   initBitcotasksReadArticle,
   initClipiRedirect,
@@ -69,7 +69,7 @@ const INITS = [
   initPrmoviesRedirect,
   initRomsfunDownloadInstant,
   initShrinkmeThemezonMrproblogger,
-  initShrtflyRedirect,
+  initShrtslugRedirect,
   initStbemuiptvcodesWpsafelink,
   initSub2getRedirect,
   initTeknoasianHqChain,

@@ -1,0 +1,1 @@
+export { initShrtslugRedirect } from './redirect';
