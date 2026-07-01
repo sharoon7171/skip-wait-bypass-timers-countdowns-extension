@@ -39,6 +39,7 @@ import { initTeknoasianHqChain } from './teknoasian-hq-chain';
 import { initTinurlzSoftinfoFragment } from './tinurlz-softinfo-fragment';
 import { initKaranpcMediatorPage } from '../sites/karanpc';
 import { initUsersdriveAutomation } from '../sites/usersdrive';
+import { initPlingDirectDownload } from '../sites/pling';
 
 const INITS = [
   initArolinksBypass,
@@ -75,6 +76,7 @@ const INITS = [
   initTinurlzSoftinfoFragment,
   initKaranpcMediatorPage,
   initUsersdriveAutomation,
+  initPlingDirectDownload,
   initWpSafelinkRedirect,
 ];
 

@@ -1,19 +1,4 @@
-# Dependencies
 node_modules/
-
-# Build output
 dist/
 build/
-
-tmp/
-
-scripts/screenshot-url
 tsconfig.tsbuildinfo
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
