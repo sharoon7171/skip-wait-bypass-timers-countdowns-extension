@@ -1,0 +1,1 @@
+export { initMultiup } from './redirect';

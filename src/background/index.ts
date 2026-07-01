@@ -6,6 +6,7 @@ import { initArolinksGuard } from './arolinks-guard';
 import { initCut4MoneyShr2Hop } from './cut4money-shr2-hop';
 import { initShortxlinksFetchChain } from './shortxlinks-fetch-chain';
 import { initXdmoviesLandingPageNav } from '../sites/xdmovies/landing-page-med';
+import { initMultiup } from '../sites/multiup';
 import { initXdmoviesMainWorldInject } from '../sites/xdmovies/mediator-page';
 
 initCoomeetMainWorldInject();
@@ -16,4 +17,5 @@ initArolinksGuard();
 initShortxlinksFetchChain();
 initCut4MoneyShr2Hop();
 initXdmoviesLandingPageNav();
+initMultiup();
 initXdmoviesMainWorldInject();

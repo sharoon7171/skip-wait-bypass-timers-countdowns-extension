@@ -1,0 +1,1 @@
+export { initPrmoviesRedirect } from './redirect';

@@ -26,10 +26,9 @@ import {
 import { initKitokolaDlGetBypass } from './kitokola-dl-get-bypass';
 import { initLinkjust } from './linkjust';
 import { initMoviesModContentScript } from './movies-mod';
-import { initMultiup } from './multiup';
 import { initOnhaxpkCopy } from '../sites/onhaxpk';
 import { initOnlinetoolsDirectDownload } from './onlinetools-direct-download';
-import { initPrmoviesRedirect } from './prmovies-redirect';
+import { initPrmoviesRedirect } from '../sites/prmovies';
 import { initRomsfunDownloadInstant } from './romsfun-download-instant';
 import { initShortxlinksSafelinkChain } from './shortxlinks-safelink-chain';
 import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogger';
@@ -38,7 +37,6 @@ import { initStbemuiptvcodesWpsafelink, initWpSafelinkRedirect } from '../sites/
 import { initSub2getRedirect } from '../sites/sub2get';
 import { initTeknoasianHqChain } from './teknoasian-hq-chain';
 import { initTinurlzSoftinfoFragment } from './tinurlz-softinfo-fragment';
-import { initUploadrarAutomation } from './uploadrar-countdown-bypass';
 import { initKaranpcMediatorPage } from '../sites/karanpc';
 import { initUsersdriveAutomation } from '../sites/usersdrive';
 
@@ -65,7 +63,6 @@ const INITS = [
   initHubcdnDl,
   initHubcloudDrive,
   initKitokolaDlGetBypass,
-  initMultiup,
   initOnhaxpkCopy,
   initOnlinetoolsDirectDownload,
   initPrmoviesRedirect,
@@ -76,7 +73,6 @@ const INITS = [
   initSub2getRedirect,
   initTeknoasianHqChain,
   initTinurlzSoftinfoFragment,
-  initUploadrarAutomation,
   initKaranpcMediatorPage,
   initUsersdriveAutomation,
   initWpSafelinkRedirect,
