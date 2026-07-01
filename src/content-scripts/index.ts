@@ -24,6 +24,7 @@ import {
 } from '../sites/hdhub4u';
 import { initKitokolaDlGetBypass } from './kitokola-dl-get-bypass';
 import { initLinkjust } from './linkjust';
+import { initLlSafelinkHqChain } from '../sites/ll-safelink';
 import { initMoviesModContentScript } from '../sites/movies-mod';
 import { initOnhaxpkCopy } from '../sites/onhaxpk';
 import { initOnlinetoolsDirectDownload } from '../sites/onlinetools';
@@ -35,7 +36,6 @@ import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogg
 import { initShrtslugRedirect } from '../sites/shrtslug';
 import { initStbemuiptvcodesWpsafelink, initWpSafelinkRedirect } from '../sites/wp-safelink';
 import { initSub2getRedirect } from '../sites/sub2get';
-import { initTeknoasianHqChain } from './teknoasian-hq-chain';
 import { initTinurlzSoftinfoFragment } from './tinurlz-softinfo-fragment';
 import { initKaranpcMediatorPage } from '../sites/karanpc';
 import { initUsersdriveAutomation } from '../sites/usersdrive';
@@ -45,6 +45,7 @@ const INITS = [
   initArolinksBypass,
   initCut4MoneyBypass,
   initLinkjust,
+  initLlSafelinkHqChain,
   initShortxlinksSafelinkChain,
   initAdlinkClickVerifyPoll,
   initAdlinkflyLinksGo,
@@ -72,7 +73,6 @@ const INITS = [
   initShrtslugRedirect,
   initStbemuiptvcodesWpsafelink,
   initSub2getRedirect,
-  initTeknoasianHqChain,
   initTinurlzSoftinfoFragment,
   initKaranpcMediatorPage,
   initUsersdriveAutomation,
