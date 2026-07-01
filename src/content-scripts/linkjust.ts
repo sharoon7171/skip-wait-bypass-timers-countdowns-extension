@@ -21,13 +21,22 @@ import {
   type LinkjustChain,
 } from './linkjust/chain';
 import { isLinkjustMediatorShell } from './linkjust/mediator';
-import {
-  clearLinkjustOverlaySession,
-  mountLinkjustOverlay,
-  readLinkjustOverlaySession,
-  restoreLinkjustOverlayFromSession,
-  type OverlayCopy,
-} from '../injected-ui/presets';
+import { createBypassOverlay, type BypassOverlayCopy } from '../injected-ui/overlay';
+
+const {
+  readOverlaySession: readLinkjustOverlaySession,
+  clearOverlaySession: clearLinkjustOverlaySession,
+  restoreOverlayFromSession: restoreLinkjustOverlayFromSession,
+  mountOverlay: mountLinkjustOverlay,
+} = createBypassOverlay({
+  id: 'skip-wait-linkjust-overlay',
+  activeClass: 'sw-linkjust-active',
+  sessionKey: 'sw-linkjust-overlay',
+  brand: 'Skip Wait · Linkjust',
+  countdownLabel: 'seconds left on timer',
+});
+
+type OverlayCopy = BypassOverlayCopy;
 import { dismissLinkjustAdblockOverlay, nudgeLinkjustTimerUi } from './linkjust/timer-ui';
 import { finishLinkjustUnlock, isLinkjustUnlockPage } from './linkjust/unlock';
 

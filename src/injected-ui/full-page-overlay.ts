@@ -56,12 +56,12 @@ function overlayRootCss(id: string): string {
 
 function overlayCardCss(id: string): string {
   const c = colors;
-  return `#${id} .sw-card{max-width:440px;width:100%;border-radius:16px;padding:clamp(22px,4vw,28px);background:${c.cardGradient};border:1px solid ${c.cardBorder};box-shadow:${c.cardShadow};pointer-events:none;font-family:${FULL_PAGE_FONT}}#${id} .sw-brand{font-family:${FULL_PAGE_FONT};font-size:clamp(1rem,2.5vw,1.25rem);font-weight:700;letter-spacing:-.02em;color:${c.accent};margin-bottom:8px}#${id} .sw-note{font-family:${FULL_PAGE_FONT};font-size:.875rem;line-height:1.55;color:${c.textDetail};margin-bottom:14px}#${id} .sw-note strong{color:${c.textPrimary};font-weight:600}#${id} .sw-status{font-family:${FULL_PAGE_FONT};font-size:.9rem;color:${c.textPrimary};min-height:1.4em;margin-bottom:10px}`;
+  return `#${id} .sw-card{max-width:440px;width:100%;border-radius:16px;padding:clamp(22px,4vw,28px);background:${c.cardGradient};border:1px solid ${c.cardBorder};box-shadow:${c.cardShadow};pointer-events:none;font-family:${FULL_PAGE_FONT}}#${id} .sw-brand{font-family:${FULL_PAGE_FONT};font-size:clamp(1em,2.5vw,1.25em);font-weight:700;letter-spacing:-.02em;color:${c.accent};margin-bottom:8px}#${id} .sw-note{font-family:${FULL_PAGE_FONT};font-size:.875em;line-height:1.55;color:${c.textDetail};margin-bottom:14px}#${id} .sw-note strong{color:${c.textPrimary};font-weight:600}#${id} .sw-status{font-family:${FULL_PAGE_FONT};font-size:.9em;color:${c.textPrimary};min-height:1.4em;margin-bottom:10px}`;
 }
 
 function overlayCountdownCss(id: string): string {
   const c = colors;
-  return `#${id} .sw-count{font-family:${FULL_PAGE_FONT};font-size:2.5rem;font-weight:700;font-variant-numeric:tabular-nums;color:${c.textPrimary};text-align:center;margin:6px 0 4px}#${id} .sw-count-label{font-family:${FULL_PAGE_FONT};font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:${c.textMuted};text-align:center;margin-top:4px}#${id} .sw-count-hint{font-family:${FULL_PAGE_FONT};font-size:.78rem;color:${c.textMuted};text-align:center;margin-top:4px}#${id} .sw-err{font-family:${FULL_PAGE_FONT};font-size:.85rem;color:${c.error};margin-top:10px;line-height:1.45}`;
+  return `#${id} .sw-count{font-family:${FULL_PAGE_FONT};font-size:2.5em;font-weight:700;font-variant-numeric:tabular-nums;color:${c.textPrimary};text-align:center;margin:6px 0 4px;line-height:1.15}#${id} .sw-count-label{font-family:${FULL_PAGE_FONT};font-size:.7em;text-transform:uppercase;letter-spacing:.08em;color:${c.textMuted};text-align:center;margin-top:4px}#${id} .sw-count-hint{font-family:${FULL_PAGE_FONT};font-size:.78em;color:${c.textMuted};text-align:center;margin-top:4px}#${id} .sw-err{font-family:${FULL_PAGE_FONT};font-size:.85em;color:${c.error};margin-top:10px;line-height:1.45}`;
 }
 
 function turnstileMountCss(id: string): string {
@@ -98,14 +98,7 @@ function blockOverlayEvents(root: HTMLElement): void {
 }
 
 export function createFullPageOverlay(options: FullPageOverlayOptions): FullPageOverlay {
-  const {
-    id,
-    brand = 'Skip Wait',
-    noteHtml,
-    status = 'Getting things ready…',
-    countdownLabel = 'Your link opens in',
-    countdownHint,
-  } = options;
+  const { id, brand = '', noteHtml, status = '', countdownLabel = '', countdownHint } = options;
 
   const activeClass = `${id}-active`;
   const root = mountOverlayRoot(
@@ -160,6 +153,7 @@ export function createFullPageOverlay(options: FullPageOverlayOptions): FullPage
   return {
     turnstileMount,
     setStatus(text) {
+      stopCountdown(true);
       statusEl.textContent = text;
     },
     setNote(html) {

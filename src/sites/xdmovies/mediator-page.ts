@@ -67,9 +67,11 @@ function attachTurnstile(mount: HTMLElement): void {
 async function runMediatorPageFlow(code: string, fingerprint: string): Promise<void> {
   const ui = createFullPageOverlay({
     id: OVERLAY_ID,
+    brand: 'Skip Wait',
     noteHtml:
       '<strong>Hang tight — getting your download ready.</strong> You don’t need to tap anything on the page. We’ll open your link automatically when it’s done.',
     status: 'Getting things ready…',
+    countdownLabel: 'Your link opens in',
     countdownHint: 'If a checkbox appears below, tap it to confirm you’re human',
   });
   attachTurnstile(ui.turnstileMount);

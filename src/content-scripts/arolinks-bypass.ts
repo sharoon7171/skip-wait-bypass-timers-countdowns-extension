@@ -26,7 +26,14 @@ import {
   renderArolinksTimerPage,
   revealTimerLinks,
 } from './arolinks/page';
-import { mountArolinksOverlay } from '../injected-ui/presets';
+import { createBypassOverlay } from '../injected-ui/overlay';
+
+const { mountOverlay: mountArolinksOverlay } = createBypassOverlay({
+  id: 'skip-wait-arolinks-overlay',
+  activeClass: 'sw-arolinks-active',
+  sessionKey: 'sw-arolinks-overlay',
+  brand: 'Skip Wait',
+});
 import type { BypassOverlay } from '../injected-ui/overlay';
 
 const HOSTS = [

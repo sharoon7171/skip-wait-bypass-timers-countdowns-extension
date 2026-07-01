@@ -8,7 +8,7 @@ import {
 import { initAdlinkClickVerifyPoll } from './adlink-click-verify-poll';
 import { initArolinksBypass } from './arolinks-bypass';
 import { initCut4MoneyBypass } from './cut4money-bypass';
-import { initAdlinkflyLinksGo } from './adlinkfly-links-go';
+import { initAdlinkflyLinksGo } from '../sites/adlinkfly';
 import { initAdlinkflyTokenPayload } from './adlinkfly-token-payload';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article';
 import { initUhdmoviesMediatorPage } from '../sites/uhdmovies';
@@ -34,13 +34,12 @@ import { initRomsfunDownloadInstant } from './romsfun-download-instant';
 import { initShortxlinksSafelinkChain } from './shortxlinks-safelink-chain';
 import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogger';
 import { initShrtflyRedirect } from './shrtfly-redirect';
-import { initStbemuiptvcodesWpsafelink } from './stbemuiptvcodes-wpsafelink';
+import { initStbemuiptvcodesWpsafelink, initWpSafelinkRedirect } from '../sites/wp-safelink';
 import { initSub2getRedirect } from './sub2get-redirect';
 import { initTeknoasianHqChain } from './teknoasian-hq-chain';
 import { initTinurlzSoftinfoFragment } from './tinurlz-softinfo-fragment';
 import { initUploadrarAutomation } from './uploadrar-countdown-bypass';
 import { initUsersdriveAutomation } from './usersdrive-countdown-bypass';
-import { initWpSafelinkRedirect } from './wp-safelink-redirect';
 
 const INITS = [
   initArolinksBypass,

@@ -1,11 +1,19 @@
-import {
-  clearCut4MoneyOverlaySession,
-  mountCut4MoneyOverlay,
-  persistCut4MoneyOverlaySession,
-  readCut4MoneyOverlaySession,
-  restoreCut4MoneyOverlayFromSession,
-  type Cut4MoneyOverlay,
-} from '../injected-ui/presets';
+import { createBypassOverlay, type BypassOverlay } from '../injected-ui/overlay';
+
+const {
+  readOverlaySession: readCut4MoneyOverlaySession,
+  persistOverlaySession: persistCut4MoneyOverlaySession,
+  clearOverlaySession: clearCut4MoneyOverlaySession,
+  restoreOverlayFromSession: restoreCut4MoneyOverlayFromSession,
+  mountOverlay: mountCut4MoneyOverlay,
+} = createBypassOverlay({
+  id: 'skip-wait-cut4money-overlay',
+  activeClass: 'sw-cut4money-active',
+  sessionKey: 'sw-cut4money-overlay',
+  brand: 'Skip Wait',
+});
+
+type Cut4MoneyOverlay = BypassOverlay;
 import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
 import {
   CUT4MONEY_ALIAS_KEY,
