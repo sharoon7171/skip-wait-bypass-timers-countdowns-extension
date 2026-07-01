@@ -39,6 +39,7 @@ import { initSub2getRedirect } from './sub2get-redirect';
 import { initTeknoasianHqChain } from './teknoasian-hq-chain';
 import { initTinurlzSoftinfoFragment } from './tinurlz-softinfo-fragment';
 import { initUploadrarAutomation } from './uploadrar-countdown-bypass';
+import { initKaranpcMediatorPage } from '../sites/karanpc';
 import { initUsersdriveAutomation } from '../sites/usersdrive';
 
 const INITS = [
@@ -76,6 +77,7 @@ const INITS = [
   initTeknoasianHqChain,
   initTinurlzSoftinfoFragment,
   initUploadrarAutomation,
+  initKaranpcMediatorPage,
   initUsersdriveAutomation,
   initWpSafelinkRedirect,
 ];

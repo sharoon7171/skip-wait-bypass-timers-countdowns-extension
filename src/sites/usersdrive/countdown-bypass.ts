@@ -7,7 +7,7 @@ function showBypassNotice(): void {
   if (document.getElementById(NOTICE_ID)) return;
   const turnstile = document.querySelector('.cf-turnstile');
   if (!turnstile) return;
-  const wrap = document.createElement(' div');
+  const wrap = document.createElement('div');
   wrap.id = NOTICE_ID;
   wrap.className = 'name';
   wrap.style.marginBottom = '12px';
@@ -24,10 +24,7 @@ function showBypassNotice(): void {
 }
 
 function unlock(): void {
-  document.querySelector<HTMLElement>('#countdown')?.style.setProperty('visibility', 'hidden');
-  const s = document.querySelector('#countdown .seconds');
-  if (s) s.textContent = '0';
-  document.querySelector<HTMLElement>('#progress i')?.style.removeProperty('display');
+  document.querySelector('.countdown')?.remove();
   const btn = document.querySelector<HTMLButtonElement>('#downloadbtn');
   if (btn) {
     btn.disabled = false;
