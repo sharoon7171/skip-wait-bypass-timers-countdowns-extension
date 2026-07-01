@@ -27,7 +27,7 @@ import { initKitokolaDlGetBypass } from './kitokola-dl-get-bypass';
 import { initLinkjust } from './linkjust';
 import { initMoviesModContentScript } from './movies-mod';
 import { initOnhaxpkCopy } from '../sites/onhaxpk';
-import { initOnlinetoolsDirectDownload } from './onlinetools-direct-download';
+import { initOnlinetoolsDirectDownload } from '../sites/onlinetools';
 import { initPrmoviesRedirect } from '../sites/prmovies';
 import { initRomsfunDownloadInstant } from './romsfun-download-instant';
 import { initShortxlinksSafelinkChain } from './shortxlinks-safelink-chain';

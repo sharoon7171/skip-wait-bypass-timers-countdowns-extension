@@ -1,4 +1,4 @@
-import { isAllowedHost } from '../utils/domain-check';
+import { isAllowedHost } from '../../utils/domain-check';
 
 const HOSTS = [
   'onlinegiftools.com',
@@ -8,6 +8,7 @@ const HOSTS = [
   'onlinetexttools.com',
   'onlinetools.com',
 ] as const;
+const NOTICE_ID = 'skipwait-onlinetools-bypass';
 const DATA_HIJACKED = 'data-skipwait-hijacked';
 const SELECTORS = {
   canvas: '#tool-output .side-box',
@@ -78,6 +79,25 @@ function hijack(btn: Element, fn: () => void): void {
   }, true);
 }
 
+function showBypassNotice(): void {
+  document.getElementById(NOTICE_ID)?.remove();
+  document.querySelector(`#tool-output #${NOTICE_ID}`)?.remove();
+  const sides = document.querySelector('.sides-wrapper');
+  if (!sides) return;
+  const row = document.createElement('div');
+  row.id = NOTICE_ID;
+  row.className = 'row pt-3';
+  const col = document.createElement('div');
+  col.className = 'col-12';
+  const notice = document.createElement('div');
+  notice.className = 'alert border border-secondary rounded mb-0';
+  notice.innerHTML =
+    '<div class="d-flex flex-row"><div class="d-flex flex-column justify-content-center align-items-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-check-circle text-primary" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/><path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.08 1.037l2.5 2.5a.75.75 0 0 0 1.079-.02l4-5.5a.75.75 0 0 0-1.196-.92"/></svg></div><div class="ps-3"><div class="text-primary fw-bold">Wait timer bypassed</div><small>Skip Wait skipped the download wait timer. Copy and download are instant.</small></div></div>';
+  col.append(notice);
+  row.append(col);
+  sides.after(row);
+}
+
 function run(): void {
   const toolOutput = document.querySelector(SELECTORS.toolOutput);
   const copyBtn = document.querySelector(SELECTORS.copyBtn);
@@ -119,6 +139,7 @@ function run(): void {
 
   hijack(copyBtn, copy);
   if (downloadBtn) hijack(downloadBtn, download);
+  showBypassNotice();
 }
 
 export function initOnlinetoolsDirectDownload(): void {
