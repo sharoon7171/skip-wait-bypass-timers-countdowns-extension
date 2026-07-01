@@ -1,0 +1,1 @@
+export { initOnhaxpkCopy } from './copy';

@@ -1,0 +1,1 @@
+export { initClipiRedirect } from './redirect';
