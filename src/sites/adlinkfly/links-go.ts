@@ -1,4 +1,4 @@
-import { linksGoFormFromHtml, postLinksGo, revealTimerLinks } from '../../content-scripts/arolinks/page';
+import { linksGoFormFromHtml, postLinksGo, revealTimerLinks } from './unlock';
 import { createFullPageOverlay, type FullPageOverlay } from '../../injected-ui/full-page-overlay';
 import { hasCaptchaToken } from '../../utils/captcha-verifier';
 
@@ -89,12 +89,6 @@ const hasLinksGoHint = (): boolean => {
   return false;
 };
 
-const arolinksBypassActive = (): boolean => {
-  if (!location.hostname.includes('arolinks.com')) return false;
-  if (!document.getElementById('skip-wait-arolinks-overlay')) return false;
-  return !isAdlinkflyLinksGoShell();
-};
-
 const runWhenNotLoading = (run: () => void): void => {
   if (document.readyState !== 'loading') run();
   else
@@ -177,7 +171,7 @@ export function initAdlinkflyLinksGo(): void {
   if (hasLinksGoHint()) requestVisibilitySpoof();
   let engaged = false;
   const tryStart = (): void => {
-    if (engaged || arolinksBypassActive() || !isAdlinkflyLinksGoShell()) return;
+    if (engaged || !isAdlinkflyLinksGoShell()) return;
     engaged = true;
     startAdlinkflyLinksGo();
   };

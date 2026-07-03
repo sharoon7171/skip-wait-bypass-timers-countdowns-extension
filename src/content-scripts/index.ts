@@ -6,8 +6,6 @@ import {
   runCoomeetMainWorldAccelerator,
 } from './coomeet-iframe';
 import { initAdlinkClickVerifyPoll } from './adlink-click-verify-poll';
-import { initArolinksBypass } from './arolinks-bypass';
-import { initCut4MoneyBypass } from './cut4money-bypass';
 import { initAdlinkflyLinksGo } from '../sites/adlinkfly';
 import { initAdlinkflyTokenPayload } from './adlinkfly-token-payload';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article';
@@ -23,7 +21,6 @@ import {
   initHubcloudDrive,
 } from '../sites/hdhub4u';
 import { initKitokolaDlGetBypass } from './kitokola-dl-get-bypass';
-import { initLinkjust } from './linkjust';
 import { initLlSafelinkHqChain } from '../sites/ll-safelink';
 import { initMoviesModContentScript } from '../sites/movies-mod';
 import { initOnhaxpkCopy } from '../sites/onhaxpk';
@@ -43,9 +40,6 @@ import { initMega4uploadBypass } from '../sites/mega4upload';
 import { initPlingDirectDownload } from '../sites/pling';
 
 const INITS = [
-  initArolinksBypass,
-  initCut4MoneyBypass,
-  initLinkjust,
   initLlSafelinkHqChain,
   initShortxlinksSafelinkChain,
   initAdlinkClickVerifyPoll,
