@@ -39,6 +39,7 @@ import { initSub2getRedirect } from '../sites/sub2get';
 import { initTinurlzSoftinfoFragment } from './tinurlz-softinfo-fragment';
 import { initKaranpcMediatorPage } from '../sites/karanpc';
 import { initUsersdriveAutomation } from '../sites/usersdrive';
+import { initMega4uploadBypass } from '../sites/mega4upload';
 import { initPlingDirectDownload } from '../sites/pling';
 
 const INITS = [
@@ -76,6 +77,7 @@ const INITS = [
   initTinurlzSoftinfoFragment,
   initKaranpcMediatorPage,
   initUsersdriveAutomation,
+  initMega4uploadBypass,
   initPlingDirectDownload,
   initWpSafelinkRedirect,
 ];

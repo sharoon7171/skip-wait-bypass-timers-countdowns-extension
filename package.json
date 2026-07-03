@@ -1,32 +1,30 @@
 {
   "name": "skip-wait",
-  "version": "1.4.33",
+  "version": "1.4.34",
   "description": "Bypass countdown timers and skip waiting pages. Instant access on link shorteners and file hosts - no wait, one click. Works on any site with wait timers.",
   "type": "module",
   "scripts": {
     "dev": "concurrently \"vite build --watch\" \"vite build --config vite.content.config.ts --watch\"",
     "build": "node --input-type=module -e \"import { rmSync } from 'node:fs'; try { rmSync('dist',{recursive:true,force:true}); } catch {}\" && tsc -b && concurrently \"vite build\" \"vite build --config vite.content.config.ts\"",
     "build:zip": "bash scripts/build-zip.sh",
-    "screenshot": "npm run build && npx playwright install chromium && node scripts/screenshot.mjs",
     "preview": "vite preview",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.3.0",
-    "@types/chrome": "^0.1.42",
-    "@types/node": "^25.9.0",
-    "@types/react": "^19.2.14",
+    "@tailwindcss/vite": "^4.3.2",
+    "@types/chrome": "^0.2.2",
+    "@types/node": "^26.1.0",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.2",
-    "concurrently": "^9.2.1",
-    "playwright": "^1.60.0",
-    "tailwindcss": "^4.3.0",
-    "terser": "^5.47.1",
+    "@vitejs/plugin-react": "^6.0.3",
+    "concurrently": "^10.0.3",
+    "tailwindcss": "^4.3.2",
+    "terser": "^5.48.0",
     "typescript": "^6.0.3",
-    "vite": "^8.0.13"
+    "vite": "^8.1.3"
   }
 }
