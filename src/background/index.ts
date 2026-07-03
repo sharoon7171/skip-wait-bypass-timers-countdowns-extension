@@ -1,7 +1,7 @@
 import { initCoomeetMainWorldInject } from './coomeet-main-world-inject';
 import { initDocumentVisibilitySpoof } from './document-visibility-spoof';
 import { initFclcAlertSuppress } from './fclc-alert-suppress';
-import { initFlightsimToMainWorldInject } from './flightsim-to-main-world';
+import { initFlightsimDownloadPatch } from '../sites/flightsim';
 import { initArolinksGuard } from './arolinks-guard';
 import { initCut4MoneyShr2Hop } from './cut4money-shr2-hop';
 import { initShortxlinksFetchChain } from './shortxlinks-fetch-chain';
@@ -12,7 +12,7 @@ import { initXdmoviesMainWorldInject } from '../sites/xdmovies/mediator-page';
 initCoomeetMainWorldInject();
 initDocumentVisibilitySpoof();
 initFclcAlertSuppress();
-initFlightsimToMainWorldInject();
+initFlightsimDownloadPatch();
 initArolinksGuard();
 initShortxlinksFetchChain();
 initCut4MoneyShr2Hop();
