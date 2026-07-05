@@ -38,6 +38,7 @@ import { initKaranpcMediatorPage } from '../sites/karanpc';
 import { initUsersdriveAutomation } from '../sites/usersdrive';
 import { initMega4uploadBypass } from '../sites/mega4upload';
 import { initPlingDirectDownload } from '../sites/pling';
+import { initWahmiCountdownBypass } from '../sites/wahmi';
 
 const INITS = [
   initLlSafelinkHqChain,
@@ -73,6 +74,7 @@ const INITS = [
   initUsersdriveAutomation,
   initMega4uploadBypass,
   initPlingDirectDownload,
+  initWahmiCountdownBypass,
   initWpSafelinkRedirect,
 ];
 
