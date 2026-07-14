@@ -22,6 +22,7 @@ import {
 } from '../sites/hdhub4u';
 import { initKitokolaDlGetBypass } from './kitokola-dl-get-bypass';
 import { initLlSafelinkHqChain } from '../sites/ll-safelink';
+import { initLootlabsUnlock } from '../sites/lootlabs';
 import { initMoviesModContentScript } from '../sites/movies-mod';
 import { initOnhaxpkCopy } from '../sites/onhaxpk';
 import { initOnlinetoolsDirectDownload } from '../sites/onlinetools';
@@ -41,6 +42,7 @@ import { initPlingDirectDownload } from '../sites/pling';
 import { initWahmiCountdownBypass } from '../sites/wahmi';
 
 const INITS = [
+  initLootlabsUnlock,
   initLlSafelinkHqChain,
   initShortxlinksSafelinkChain,
   initAdlinkClickVerifyPoll,
