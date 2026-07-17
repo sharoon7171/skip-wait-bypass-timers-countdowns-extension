@@ -1,15 +1,32 @@
 import { linksGoFormFromHtml, postLinksGo, revealTimerLinks } from './unlock';
 import { createFullPageOverlay, type FullPageOverlay } from '../../injected-ui/full-page-overlay';
+import { pinSiteWidgetOverOverlay } from '../../injected-ui/pin-site-widget';
 import { isAllowedHost } from '../../utils/domain-check';
 
-const HOSTS = ['linkjust.com'] as const;
+const HOSTS = ['linkjust.com', 'pahe.plus'] as const;
 const OVERLAY_ID = 'skip-wait-adlinkfly-overlay';
+const CAPTCHA_PIN_STYLE_ID = 'skip-wait-adlinkfly-captcha-pin';
+const CAPTCHA_WIDGET_ID = 'captchaShortlink';
 const LINKS_GO_SHELL_SEL = '#link-view,#go-link,form[action*="/links/go"],a.get-link';
-const RECAPTCHA_RESPONSE = '[name="g-recaptcha-response"]';
+const CAPTCHA_RESPONSE = '[name="g-recaptcha-response"], [name="h-captcha-response"]';
+const HCAPTCHA_IFRAMES = [
+  'iframe[src*="hcaptcha.com"]',
+  'iframe[src*="newassets.hcaptcha.com"]',
+] as const;
 const NOTE = {
   lead: 'Hang tight — unlocking your link.',
   detail: "You don't need to tap anything on the page.",
 } as const;
+const CAPTCHA_NOTE = {
+  lead: 'Confirm you’re human.',
+  detail: 'Tap the checkbox below. We’ll continue automatically when it’s done.',
+} as const;
+
+type CaptchaPhase = {
+  started: boolean;
+  done: boolean;
+  stopPin: (() => void) | null;
+};
 
 const isRealUrl = (s: string): boolean => s.startsWith('http://') || s.startsWith('https://');
 
@@ -17,6 +34,18 @@ let ui: FullPageOverlay | null = null;
 
 const requestVisibilitySpoof = (): void => {
   chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
+};
+
+const dropUi = (): void => {
+  ui?.remove();
+  ui = null;
+};
+
+const exitCaptchaPhase = (phase: CaptchaPhase): void => {
+  phase.stopPin?.();
+  phase.stopPin = null;
+  dropUi();
+  phase.done = true;
 };
 
 const counterSec = (): number => {
@@ -82,6 +111,12 @@ const redirectTo = (url: string): void => {
 const isAdlinkflyLinksGoShell = (doc: Document = document): boolean =>
   !!doc.querySelector(LINKS_GO_SHELL_SEL);
 
+const captchaForm = (): HTMLFormElement | null => {
+  const form = document.getElementById('link-view') as HTMLFormElement | null;
+  if (!form?.querySelector(CAPTCHA_RESPONSE)) return null;
+  return form;
+};
+
 const hasLinksGoHint = (): boolean => {
   if (isAdlinkflyLinksGoShell()) return true;
   for (const s of document.scripts) {
@@ -100,54 +135,89 @@ const runWhenNotLoading = (run: () => void): void => {
     });
 };
 
-const hasRecaptchaToken = (form: HTMLFormElement): boolean => {
-  for (const el of form.querySelectorAll(RECAPTCHA_RESPONSE)) {
+const hasCaptchaToken = (form: HTMLFormElement): boolean => {
+  for (const el of form.querySelectorAll(CAPTCHA_RESPONSE)) {
     const v = (el as HTMLInputElement | HTMLTextAreaElement).value?.trim();
-    if (v?.length) return true;
+    if (v && v.length > 20) return true;
   }
   return false;
 };
 
-const onCaptchaPage = (form: HTMLFormElement, overlay: FullPageOverlay): void => {
-  if (!form.querySelector(RECAPTCHA_RESPONSE)) return;
-  requestVisibilitySpoof();
-  overlay.setStatus('Completing verification…');
+const runCaptchaPhase = (form: HTMLFormElement, phase: CaptchaPhase): void => {
+  if (phase.started || phase.done) return;
+  phase.started = true;
+
+  const overlay = mountUi();
+  overlay.setNote(CAPTCHA_NOTE);
+  overlay.setStatus('Waiting for captcha…');
+
+  if (document.getElementById(CAPTCHA_WIDGET_ID)) {
+    phase.stopPin = pinSiteWidgetOverOverlay({
+      overlayId: OVERLAY_ID,
+      mount: overlay.turnstileMount,
+      widgetId: CAPTCHA_WIDGET_ID,
+      styleId: CAPTCHA_PIN_STYLE_ID,
+      alsoVisibleSelectors: HCAPTCHA_IFRAMES,
+    });
+  }
+
   const tick = (): void => {
-    if (hasRecaptchaToken(form)) form.submit();
-    else requestAnimationFrame(tick);
+    if (phase.done) return;
+    if (!document.contains(form)) {
+      exitCaptchaPhase(phase);
+      return;
+    }
+    if (!hasCaptchaToken(form)) {
+      requestAnimationFrame(tick);
+      return;
+    }
+    exitCaptchaPhase(phase);
+    form.submit();
   };
   requestAnimationFrame(tick);
 };
 
-const onTimerPage = async (posted: { done: boolean }, overlay: FullPageOverlay): Promise<boolean> => {
+const runTimerPhase = async (state: { done: boolean; inFlight: boolean }): Promise<boolean> => {
+  if (state.done || state.inFlight) return state.done;
+
   const link = document.querySelector<HTMLAnchorElement>('a.get-link');
   if (link?.href && isRealUrl(link.href)) {
+    state.done = true;
     redirectTo(link.href);
     return true;
   }
+
   const form = document.querySelector<HTMLFormElement>('#go-link, form[action*="/links/go"]');
-  if (!form || posted.done) return false;
-  posted.done = true;
-  const url = await finishTimerUnlock(overlay);
-  if (!url) return false;
-  redirectTo(url);
-  return true;
+  if (!form) return false;
+
+  state.inFlight = true;
+  try {
+    const overlay = mountUi();
+    overlay.setNote(NOTE);
+    const url = await finishTimerUnlock(overlay);
+    if (!url) return false;
+    state.done = true;
+    redirectTo(url);
+    return true;
+  } finally {
+    state.inFlight = false;
+  }
 };
 
 const startAdlinkflyLinksGo = (): void => {
   requestVisibilitySpoof();
-  const overlay = mountUi();
-  const posted = { done: false };
+  const captchaPhase: CaptchaPhase = { started: false, done: false, stopPin: null };
+  const timerState = { done: false, inFlight: false };
   let finished = false;
 
   const run = (): void => {
     if (finished) return;
-    const linkView = document.getElementById('link-view') as HTMLFormElement | null;
-    if (linkView) {
-      onCaptchaPage(linkView, overlay);
+    const captcha = captchaForm();
+    if (captcha) {
+      runCaptchaPhase(captcha, captchaPhase);
       return;
     }
-    void onTimerPage(posted, overlay).then((ok) => {
+    void runTimerPhase(timerState).then((ok) => {
       if (ok) finished = true;
     });
   };
@@ -155,7 +225,7 @@ const startAdlinkflyLinksGo = (): void => {
   const observer = new MutationObserver(run);
   run();
   observer.observe(document.documentElement, {
-    attributeFilter: ['href'],
+    attributeFilter: ['href', 'value'],
     attributes: true,
     childList: true,
     subtree: true,

@@ -1,4 +1,5 @@
 import { createFullPageOverlay } from '../../injected-ui/full-page-overlay';
+import { pinSiteWidgetOverOverlay } from '../../injected-ui/pin-site-widget';
 import { isAllowedHost, whenDomReady } from '../../utils/domain-check';
 
 const XDMOVIES_MAIN_WORLD_RUN = 'XDMOVIES_MAIN_WORLD_RUN' as const;
@@ -6,7 +7,6 @@ const MEDIATOR_PAGE_HOSTS = ['latestnewsonline.sbs'] as const;
 const MSG_SOURCE = 'skip-wait-xdmovies';
 const MSG_VISIBILITY = 'INJECT_VISIBILITY_SPOOF';
 const OVERLAY_ID = 'skip-wait-xdmovies-overlay';
-const OVERLAY_ACTIVE = `${OVERLAY_ID}-active`;
 const PATH = /^\/(?:r|download)\/([^/]+)/;
 const TIMER_SECONDS = 6;
 const SERVER_WAIT_MS = TIMER_SECONDS * 2 * 1000;
@@ -61,40 +61,6 @@ async function xdmoviesFingerprint(): Promise<string> {
   return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
 }
 
-function installSiteOverlayChrome(mount: HTMLElement): () => void {
-  let style = document.getElementById(SITE_STYLE_ID) as HTMLStyleElement | null;
-  if (!style) {
-    style = document.createElement('style');
-    style.id = SITE_STYLE_ID;
-    document.documentElement.appendChild(style);
-  }
-
-  const paint = (): void => {
-    const box = document.getElementById(TURNSTILE_CONTAINER_ID);
-    if (box?.classList.contains('hidden')) box.classList.remove('hidden');
-    const r = mount.getBoundingClientRect();
-    const top = Math.max(8, r.top);
-    const left = Math.max(8, r.left);
-    const width = Math.max(300, r.width || 300);
-    style!.textContent =
-      `html.${OVERLAY_ACTIVE}>*:not(head):not(body):not(#${OVERLAY_ID}){display:none!important;pointer-events:none!important}` +
-      `html.${OVERLAY_ACTIVE} #${TURNSTILE_CONTAINER_ID},html.${OVERLAY_ACTIVE} #${TURNSTILE_CONTAINER_ID} *{visibility:visible!important;pointer-events:auto!important}` +
-      `html.${OVERLAY_ACTIVE} #${TURNSTILE_CONTAINER_ID}{position:fixed!important;left:${left}px!important;top:${top}px!important;width:${width}px!important;min-height:65px!important;z-index:2147483647!important;display:flex!important;align-items:center!important;justify-content:center!important;margin:0!important;transform:none!important;opacity:1!important;height:auto!important}`;
-  };
-
-  paint();
-  const ro = new ResizeObserver(paint);
-  ro.observe(mount);
-  window.addEventListener('resize', paint);
-  const tid = window.setInterval(paint, 500);
-  return () => {
-    ro.disconnect();
-    window.removeEventListener('resize', paint);
-    window.clearInterval(tid);
-    style?.remove();
-  };
-}
-
 async function runMediatorPageFlow(code: string, fingerprint: string): Promise<void> {
   const ui = createFullPageOverlay({
     id: OVERLAY_ID,
@@ -109,7 +75,12 @@ async function runMediatorPageFlow(code: string, fingerprint: string): Promise<v
     countdownHint: 'If a checkbox appears below, tap it to confirm you’re human',
   });
 
-  const stopChrome = installSiteOverlayChrome(ui.turnstileMount);
+  const stopChrome = pinSiteWidgetOverOverlay({
+    overlayId: OVERLAY_ID,
+    mount: ui.turnstileMount,
+    widgetId: TURNSTILE_CONTAINER_ID,
+    styleId: SITE_STYLE_ID,
+  });
 
   window.addEventListener('message', (ev: MessageEvent) => {
     if (ev.source !== window || ev.origin !== location.origin) return;

@@ -27,8 +27,22 @@ const xxc = (html: string): string | null => {
   return m?.[1] ?? m?.[2] ?? null;
 };
 
+function blockHqAutoSubmit(): () => void {
+  const proto = HTMLFormElement.prototype;
+  const native = proto.submit;
+  proto.submit = function (this: HTMLFormElement) {
+    if (this.querySelector('input[name="hq"]')) return;
+    return native.call(this);
+  };
+  return () => {
+    proto.submit = native;
+  };
+}
+
 async function chainArticle(url: string, hqToken?: string): Promise<string | null> {
-  const html = hqToken ? await post(url, { hq: hqToken }) : await fetch(url, { credentials: 'include' }).then((r) => r.text());
+  const html = hqToken
+    ? await post(url, { hq: hqToken })
+    : await fetch(url, { credentials: 'include' }).then((r) => r.text());
   const hw = ll(html);
   if (!hw) return null;
   return xxc(await post(url, { hw }));
@@ -42,11 +56,14 @@ async function chainHome(hw: string): Promise<string | null> {
 }
 
 async function bypassHt(): Promise<string | null> {
-  const html = await fetch(location.href, { credentials: 'include' }).then((r) => r.text());
-  const token = hqVal(html);
+  const fromDom = document.querySelector<HTMLInputElement>('input[name="hq"]')?.value?.trim();
+  const token =
+    fromDom ||
+    hqVal(document.documentElement.innerHTML) ||
+    hqVal(await fetch(location.href, { credentials: 'include' }).then((r) => r.text()));
   if (!token) return null;
-  const hw = ll(await post(`${location.origin}/`, { hq: token }));
-  return hw ? chainHome(hw) : null;
+  const hw = ll(await post(`${location.origin}/`, { hq: token })) ?? token;
+  return chainHome(hw);
 }
 
 function waitLl(): Promise<string | null> {
@@ -68,6 +85,7 @@ function waitLl(): Promise<string | null> {
 }
 
 async function run(): Promise<void> {
+  const unblock = new URLSearchParams(location.search).has('ht') ? blockHqAutoSubmit() : null;
   const ui = createFullPageOverlay({
     id: OVERLAY_ID,
     brand: 'Skip Wait',
@@ -86,7 +104,10 @@ async function run(): Promise<void> {
       location.replace(dest);
       return;
     }
-  } catch {}
+  } catch {
+  } finally {
+    unblock?.();
+  }
   ui.remove();
 }
 

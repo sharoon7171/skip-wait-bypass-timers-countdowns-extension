@@ -5,8 +5,11 @@ import {
   isOnCoomeetIframeHost,
   runCoomeetMainWorldAccelerator,
 } from './coomeet-iframe';
-import { initAdlinkClickVerifyPoll, initAdlinkflyLinksGo } from '../sites/adlinkfly';
-import { initAdlinkflyTokenPayload } from './adlinkfly-token-payload';
+import {
+  initAdlinkClickVerifyPoll,
+  initAdlinkflyLinksGo,
+  initAdlinkflyTokenPayload,
+} from '../sites/adlinkfly';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article';
 import { initClipiRedirect } from '../sites/clipi';
 import { initCookiesceoCopy } from './cookiesceo-copy';
@@ -26,6 +29,7 @@ import { initLootlabsUnlock } from '../sites/lootlabs';
 import { initMoviesModContentScript } from '../sites/movies-mod';
 import { initOnhaxpkCopy } from '../sites/onhaxpk';
 import { initOnlinetoolsDirectDownload } from '../sites/onlinetools';
+import { initOuoBypass } from '../sites/ouo';
 import { initPrmoviesRedirect } from '../sites/prmovies';
 import { initSidMediatorBypass } from '../sites/sid-mediator';
 import { initRomsfunDownloadInstant } from '../sites/romsfun';
@@ -39,6 +43,8 @@ import { initKaranpcMediatorPage } from '../sites/karanpc';
 import { initUsersdriveAutomation } from '../sites/usersdrive';
 import { initMega4uploadBypass } from '../sites/mega4upload';
 import { initPlingDirectDownload } from '../sites/pling';
+import { initRarestudyProlinkWait } from '../sites/rarestudy';
+import { initStudyratnaProlinkBypass } from '../sites/studyratna';
 import { initWahmiCountdownBypass } from '../sites/wahmi';
 
 const INITS = [
@@ -66,6 +72,7 @@ const INITS = [
   initKitokolaDlGetBypass,
   initOnhaxpkCopy,
   initOnlinetoolsDirectDownload,
+  initOuoBypass,
   initPrmoviesRedirect,
   initRomsfunDownloadInstant,
   initShrinkmeThemezonMrproblogger,
@@ -76,6 +83,8 @@ const INITS = [
   initKaranpcMediatorPage,
   initUsersdriveAutomation,
   initMega4uploadBypass,
+  initStudyratnaProlinkBypass,
+  initRarestudyProlinkWait,
   initPlingDirectDownload,
   initWahmiCountdownBypass,
   initWpSafelinkRedirect,

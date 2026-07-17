@@ -7,6 +7,7 @@ import { initXdmoviesLandingPageNav } from '../sites/xdmovies/landing-page-med';
 import { initMultiup } from '../sites/multiup';
 import { initLootlabsMainWorldInject } from '../sites/lootlabs';
 import { initXdmoviesMainWorldInject } from '../sites/xdmovies/mediator-page';
+import { initStudyratnaCookieDest } from '../sites/studyratna';
 
 initCoomeetMainWorldInject();
 initDocumentVisibilitySpoof();
@@ -17,3 +18,4 @@ initXdmoviesLandingPageNav();
 initMultiup();
 initLootlabsMainWorldInject();
 initXdmoviesMainWorldInject();
+initStudyratnaCookieDest();
