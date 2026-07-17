@@ -63,6 +63,13 @@ Skip Wait requests the "storage" permission (chrome.storage.local) to save your 
 
 
 --------------------------------------------------------------------------------
+COOKIES PERMISSION
+--------------------------------------------------------------------------------
+
+Skip Wait requests the "cookies" permission so the background service worker can read a site-set cookie on certain prolink shortener pages when the final destination URL is stored only in an HttpOnly cookie. Content scripts cannot access HttpOnly cookies, so without this permission the extension cannot finish the bypass on those flows. On a supported prolink page, the content script asks the background worker to read cookies for that tab's origin only, decode the embedded destination URL on your device, and redirect you. Cookie values are not uploaded, shared with third parties, or used for analytics or ads. The extension does not set, change, or delete cookies—only reads them to resolve the redirect on supported wait pages.
+
+
+--------------------------------------------------------------------------------
 WEB NAVIGATION PERMISSION
 --------------------------------------------------------------------------------
 
