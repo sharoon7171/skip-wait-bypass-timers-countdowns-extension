@@ -4,6 +4,7 @@ export function hostnameMatches(hostname: string, roots: readonly string[]): boo
 }
 
 export function isAllowedHost(allowed: readonly string[]): boolean {
+  if (allowed.length === 0) return false;
   try {
     return hostnameMatches(new URL(window.location.href).hostname, allowed);
   } catch {

@@ -1,6 +1,8 @@
 import { linksGoFormFromHtml, postLinksGo, revealTimerLinks } from './unlock';
 import { createFullPageOverlay, type FullPageOverlay } from '../../injected-ui/full-page-overlay';
+import { isAllowedHost } from '../../utils/domain-check';
 
+const HOSTS = ['linkjust.com'] as const;
 const OVERLAY_ID = 'skip-wait-adlinkfly-overlay';
 const LINKS_GO_SHELL_SEL = '#link-view,#go-link,form[action*="/links/go"],a.get-link';
 const RECAPTCHA_RESPONSE = '[name="g-recaptcha-response"]';
@@ -175,6 +177,7 @@ const startAdlinkflyLinksGo = (): void => {
 };
 
 export function initAdlinkflyLinksGo(): void {
+  if (!isAllowedHost(HOSTS)) return;
   if (hasLinksGoHint()) requestVisibilitySpoof();
   let engaged = false;
   const tryStart = (): void => {
