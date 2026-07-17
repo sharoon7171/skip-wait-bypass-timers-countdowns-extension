@@ -28,7 +28,7 @@ import { initOnhaxpkCopy } from '../sites/onhaxpk';
 import { initOnlinetoolsDirectDownload } from '../sites/onlinetools';
 import { initPrmoviesRedirect } from '../sites/prmovies';
 import { initSidMediatorBypass } from '../sites/sid-mediator';
-import { initRomsfunDownloadInstant } from './romsfun-download-instant';
+import { initRomsfunDownloadInstant } from '../sites/romsfun';
 import { initShortxlinksSafelinkChain } from './shortxlinks-safelink-chain';
 import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogger';
 import { initShrtslugRedirect } from '../sites/shrtslug';
