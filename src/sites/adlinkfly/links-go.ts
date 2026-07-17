@@ -1,10 +1,9 @@
 import { linksGoFormFromHtml, postLinksGo, revealTimerLinks } from './unlock';
 import { createFullPageOverlay, type FullPageOverlay } from '../../injected-ui/full-page-overlay';
-import { hasCaptchaToken } from '../../utils/captcha-verifier';
 
 const OVERLAY_ID = 'skip-wait-adlinkfly-overlay';
 const LINKS_GO_SHELL_SEL = '#link-view,#go-link,form[action*="/links/go"],a.get-link';
-const RECAPTCHA_NAMES = ['g-recaptcha-response'];
+const RECAPTCHA_RESPONSE = '[name="g-recaptcha-response"]';
 const NOTE = {
   lead: 'Hang tight — unlocking your link.',
   detail: "You don't need to tap anything on the page.",
@@ -99,12 +98,20 @@ const runWhenNotLoading = (run: () => void): void => {
     });
 };
 
+const hasRecaptchaToken = (form: HTMLFormElement): boolean => {
+  for (const el of form.querySelectorAll(RECAPTCHA_RESPONSE)) {
+    const v = (el as HTMLInputElement | HTMLTextAreaElement).value?.trim();
+    if (v?.length) return true;
+  }
+  return false;
+};
+
 const onCaptchaPage = (form: HTMLFormElement, overlay: FullPageOverlay): void => {
-  if (!form.querySelector('[name="g-recaptcha-response"]')) return;
+  if (!form.querySelector(RECAPTCHA_RESPONSE)) return;
   requestVisibilitySpoof();
   overlay.setStatus('Completing verification…');
   const tick = (): void => {
-    if (hasCaptchaToken(form, RECAPTCHA_NAMES)) form.submit();
+    if (hasRecaptchaToken(form)) form.submit();
     else requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);

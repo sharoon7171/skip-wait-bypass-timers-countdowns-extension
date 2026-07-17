@@ -1,29 +1,33 @@
 import { createFullPageOverlay } from '../../injected-ui/full-page-overlay';
 import { isAllowedHost, whenDomReady } from '../../utils/domain-check';
-import { isCloudflareInterstitial } from '../../utils/cloudflare-verifier';
 
 const XDMOVIES_MAIN_WORLD_RUN = 'XDMOVIES_MAIN_WORLD_RUN' as const;
 const MEDIATOR_PAGE_HOSTS = ['latestnewsonline.sbs'] as const;
 const MSG_SOURCE = 'skip-wait-xdmovies';
 const MSG_VISIBILITY = 'INJECT_VISIBILITY_SPOOF';
 const OVERLAY_ID = 'skip-wait-xdmovies-overlay';
+const OVERLAY_ACTIVE = `${OVERLAY_ID}-active`;
 const PATH = /^\/(?:r|download)\/([^/]+)/;
-const SERVER_WAIT_MS = 10_500;
-const TURNSTILE_SITEKEY = '0x4AAAAAACwMJhFoINTv6AGb';
+const TIMER_SECONDS = 6;
+const SERVER_WAIT_MS = TIMER_SECONDS * 2 * 1000;
+const TURNSTILE_CONTAINER_ID = 'turnstileContainer';
+const SITE_STYLE_ID = 'skip-wait-xdmovies-site-style';
 
 type XdmoviesMainWorldPayload = {
   code: string;
   fingerprint: string;
   waitMs: number;
-  sitekey: string;
   msgSource: string;
-  turnstileMountId: string;
 };
 
 type PhaseMessage = { source?: string; phase?: string; waitEndTs?: number; message?: string };
 
-const mediatorReady = (): boolean =>
-  !isCloudflareInterstitial() && document.getElementById('turnstileContainer') !== null;
+const isCloudflareInterstitial = (): boolean => {
+  const title = document.title.toLowerCase();
+  if (title.includes('just a moment') || title.includes('attention required')) return true;
+  if (document.querySelector('#challenge-running, #cf-challenge-running, #challenge-stage')) return true;
+  return false;
+};
 
 async function xdmoviesFingerprint(): Promise<string> {
   const cv = document.createElement('canvas');
@@ -57,11 +61,38 @@ async function xdmoviesFingerprint(): Promise<string> {
   return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
 }
 
-function attachTurnstile(mount: HTMLElement): void {
-  const box = document.getElementById('turnstileContainer');
-  if (!box) return;
-  if (box.parentElement !== mount) mount.appendChild(box);
-  box.classList.remove('hidden');
+function installSiteOverlayChrome(mount: HTMLElement): () => void {
+  let style = document.getElementById(SITE_STYLE_ID) as HTMLStyleElement | null;
+  if (!style) {
+    style = document.createElement('style');
+    style.id = SITE_STYLE_ID;
+    document.documentElement.appendChild(style);
+  }
+
+  const paint = (): void => {
+    const box = document.getElementById(TURNSTILE_CONTAINER_ID);
+    if (box?.classList.contains('hidden')) box.classList.remove('hidden');
+    const r = mount.getBoundingClientRect();
+    const top = Math.max(8, r.top);
+    const left = Math.max(8, r.left);
+    const width = Math.max(300, r.width || 300);
+    style!.textContent =
+      `html.${OVERLAY_ACTIVE}>*:not(head):not(body):not(#${OVERLAY_ID}){display:none!important;pointer-events:none!important}` +
+      `html.${OVERLAY_ACTIVE} #${TURNSTILE_CONTAINER_ID},html.${OVERLAY_ACTIVE} #${TURNSTILE_CONTAINER_ID} *{visibility:visible!important;pointer-events:auto!important}` +
+      `html.${OVERLAY_ACTIVE} #${TURNSTILE_CONTAINER_ID}{position:fixed!important;left:${left}px!important;top:${top}px!important;width:${width}px!important;min-height:65px!important;z-index:2147483647!important;display:flex!important;align-items:center!important;justify-content:center!important;margin:0!important;transform:none!important;opacity:1!important;height:auto!important}`;
+  };
+
+  paint();
+  const ro = new ResizeObserver(paint);
+  ro.observe(mount);
+  window.addEventListener('resize', paint);
+  const tid = window.setInterval(paint, 500);
+  return () => {
+    ro.disconnect();
+    window.removeEventListener('resize', paint);
+    window.clearInterval(tid);
+    style?.remove();
+  };
 }
 
 async function runMediatorPageFlow(code: string, fingerprint: string): Promise<void> {
@@ -77,7 +108,8 @@ async function runMediatorPageFlow(code: string, fingerprint: string): Promise<v
     countdownLabel: 'Your link opens in',
     countdownHint: 'If a checkbox appears below, tap it to confirm you’re human',
   });
-  attachTurnstile(ui.turnstileMount);
+
+  const stopChrome = installSiteOverlayChrome(ui.turnstileMount);
 
   window.addEventListener('message', (ev: MessageEvent) => {
     if (ev.source !== window || ev.origin !== location.origin) return;
@@ -99,11 +131,8 @@ async function runMediatorPageFlow(code: string, fingerprint: string): Promise<v
       return;
     }
     if (d.phase === 'redirect') {
+      stopChrome();
       ui.setStatus('Opening your download…');
-      return;
-    }
-    if (d.phase === 'turnstile_error' || d.phase === 'turnstile_expired') {
-      ui.setStatus('That check didn’t go through. Wait a moment or refresh the page.');
       return;
     }
     if (d.phase === 'error') {
@@ -120,9 +149,7 @@ async function runMediatorPageFlow(code: string, fingerprint: string): Promise<v
       code,
       fingerprint,
       waitMs: SERVER_WAIT_MS,
-      sitekey: TURNSTILE_SITEKEY,
       msgSource: MSG_SOURCE,
-      turnstileMountId: ui.turnstileMount.id,
     },
   });
 }
@@ -133,16 +160,25 @@ export function initXdmoviesMediatorPage(): void {
   if (!code) return;
   void (async () => {
     const fingerprint = xdmoviesFingerprint();
-    await whenDomReady(mediatorReady);
+    await whenDomReady(
+      () =>
+        !isCloudflareInterstitial() &&
+        document.getElementById('card') !== null &&
+        document.getElementById(TURNSTILE_CONTAINER_ID) !== null,
+    );
     chrome.runtime.sendMessage({ type: MSG_VISIBILITY });
     await runMediatorPageFlow(code, await fingerprint);
   })();
 }
 
 export function runXdmoviesMainWorldFlow(P: XdmoviesMainWorldPayload): void {
-  type Io = { on: (ev: string, fn: (...a: unknown[]) => void) => void; emit: (ev: string, ...a: unknown[]) => void; connected?: boolean };
+  type Io = {
+    on: (ev: string, fn: (...a: unknown[]) => void) => void;
+    emit: (ev: string, ...a: unknown[]) => void;
+    connected?: boolean;
+    disconnect?: () => void;
+  };
   type IoFactory = (a: unknown, o?: Record<string, unknown>) => Io;
-  type Turnstile = { render: (el: HTMLElement, o: Record<string, unknown>) => string; reset?: (id?: string) => void };
 
   const post = (phase: string, extra?: Record<string, unknown>): void => {
     window.postMessage({ source: P.msgSource, phase, ...(extra ?? {}) }, location.origin);
@@ -156,137 +192,139 @@ export function runXdmoviesMainWorldFlow(P: XdmoviesMainWorldPayload): void {
     } catch {}
   };
 
-  const trapGlobal = <T>(key: string, ready: (v: T) => boolean): Promise<T> =>
+  const sleep = (ms: number): Promise<void> => new Promise((r) => window.setTimeout(r, ms));
+
+  const waitIo = (): Promise<IoFactory> =>
     new Promise((resolve) => {
       const w = window as unknown as Record<string, unknown>;
-      const cur = w[key] as T | undefined;
-      if (cur !== undefined && ready(cur)) return resolve(cur);
+      const cur = w['io'];
+      if (typeof cur === 'function') return resolve(cur as IoFactory);
       let v: unknown = cur;
-      Object.defineProperty(w, key, {
+      Object.defineProperty(w, 'io', {
         configurable: true,
         get: () => v,
         set: (x: unknown) => {
           v = x;
-          if (x !== undefined && ready(x as T)) resolve(x as T);
+          if (typeof x === 'function') resolve(x as IoFactory);
         },
       });
     });
 
-  const turnstileEl = (): HTMLElement => {
-    const mount = document.getElementById(P.turnstileMountId);
-    if (!mount) throw new Error('turnstile mount missing');
-    return (
-      (mount.querySelector('#turnstileWidget') as HTMLElement | null) ??
-      mount.appendChild(Object.assign(document.createElement('div'), { id: 'turnstileWidget' }))
-    );
+  const bindSocket = async (ioFn: IoFactory, bindToken: string): Promise<Io> => {
+    const s = ioFn(undefined, { transports: ['websocket'] });
+    const pulse = window.setInterval(() => {
+      if (!s.connected) return;
+      s.emit('heartbeat');
+      s.emit('visibility', 'visible');
+    }, 1000);
+    await new Promise<void>((resolve, reject) => {
+      s.on('connect', () => {
+        s.emit('bind', bindToken);
+        s.emit('visibility', 'visible');
+      });
+      s.on('bound', () => resolve());
+      s.on('error', (e: unknown) => reject(e instanceof Error ? e : new Error(String(e))));
+      window.setTimeout(() => resolve(), 3000);
+    });
+    (s as Io & { __pulse?: number }).__pulse = pulse;
+    return s;
   };
 
-  const turnstileToken = (): string | null => {
+  const stopSocket = (s: Io | null): void => {
+    if (!s) return;
+    const pulse = (s as Io & { __pulse?: number }).__pulse;
+    if (pulse) window.clearInterval(pulse);
+    try {
+      s.disconnect?.();
+    } catch {}
+  };
+
+  const readTurnstileToken = (): string | null => {
     const value = document.querySelector<HTMLInputElement>('input[name="cf-turnstile-response"]')?.value ?? '';
     return value.length > 50 ? value : null;
   };
 
+  const waitForTurnstileToken = (): Promise<string> =>
+    new Promise((resolve) => {
+      let done = false;
+      const w = window as Window & { onTurnstileSuccess?: (token: string) => void };
+      const finish = (token: string): void => {
+        if (done || !token) return;
+        done = true;
+        mo.disconnect();
+        resolve(token);
+      };
+      const prev = w.onTurnstileSuccess;
+      w.onTurnstileSuccess = (token: string) => {
+        try {
+          prev?.(token);
+        } catch {}
+        finish(token);
+      };
+      const mo = new MutationObserver(() => {
+        spoofVisibility();
+        const token = readTurnstileToken();
+        if (token) finish(token);
+      });
+      mo.observe(document.documentElement, {
+        attributeFilter: ['value'],
+        attributes: true,
+        childList: true,
+        subtree: true,
+      });
+      const existing = readTurnstileToken();
+      if (existing) finish(existing);
+    });
+
   void (async () => {
+    let socket: Io | null = null;
     try {
       spoofVisibility();
       const waitEndTs = Date.now() + P.waitMs;
       post('parallel', { waitEndTs });
+      const tokenPromise = waitForTurnstileToken();
 
-      const sessionPromise = fetch('/api/session', {
+      const sessionRes = await fetch('/api/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({ code: P.code, fingerprint: P.fingerprint }),
-      }).then(async (r) => {
-        const json = (await r.json()) as { sessionId?: string; token?: string; error?: string };
-        if (!json.sessionId || !json.token) throw new Error(json.error ?? `session ${r.status}`);
-        return json as { sessionId: string; token: string };
       });
+      const sessionJson = (await sessionRes.json()) as { sessionId?: string; token?: string; error?: string };
+      if (!sessionJson.sessionId || !sessionJson.token) {
+        throw new Error(sessionJson.error ?? `session ${sessionRes.status}`);
+      }
 
-      const bindPromise = trapGlobal<IoFactory>('io', (v) => typeof v === 'function').then(async (ioFn) => {
-        const sess = await sessionPromise;
-        await new Promise<void>((resolve, reject) => {
-          const s = ioFn(undefined, { transports: ['websocket'] });
-          const pulse = window.setInterval(() => {
-            if (!s.connected) return;
-            s.emit('heartbeat');
-            s.emit('visibility', 'visible');
-          }, 1000);
-          s.on('connect', () => {
-            s.emit('bind', sess.token);
-            s.emit('visibility', 'visible');
-          });
-          s.on('bound', () => {
-            clearInterval(pulse);
-            resolve();
-          });
-          s.on('error', (e: unknown) => {
-            clearInterval(pulse);
-            reject(e instanceof Error ? e : new Error(String(e)));
-          });
-        });
-        return sess;
-      });
+      const ioFn = await waitIo();
+      socket = await bindSocket(ioFn, sessionJson.token);
 
-      const tokenPromise = trapGlobal<Turnstile>('turnstile', (v) => typeof v?.render === 'function').then(
-        (ts) =>
-          new Promise<string>((resolve) => {
-            let mo: MutationObserver;
-            const finish = (token: string): void => {
-              mo.disconnect();
-              resolve(token);
-            };
-            const existing = turnstileToken();
-            if (existing) return finish(existing);
-            const el = turnstileEl();
-            if (!el.querySelector('iframe, input')) {
-              try {
-                ts.render(el, {
-                  sitekey: P.sitekey,
-                  theme: 'dark',
-                  size: 'normal',
-                  callback: finish,
-                  'error-callback': () => post('turnstile_error'),
-                  'expired-callback': () => post('turnstile_expired'),
-                });
-              } catch {
-                ts.reset?.();
-              }
-            }
-            mo = new MutationObserver(() => {
-              spoofVisibility();
-              const token = turnstileToken();
-              if (token) finish(token);
-            });
-            mo.observe(document.documentElement, {
-              childList: true,
-              subtree: true,
-              attributes: true,
-              attributeFilter: ['value'],
-            });
-          }),
-      );
-
-      const serverReady = new Promise<void>((resolve) => {
-        const remain = waitEndTs - Date.now();
-        if (remain <= 0) resolve();
-        else window.setTimeout(resolve, remain);
-      });
-
-      const [sess, tok] = await Promise.all([bindPromise, tokenPromise, serverReady]).then(([s, t]) => [s, t] as const);
+      const turnstileToken = await Promise.all([
+        tokenPromise,
+        sleep(Math.max(0, waitEndTs - Date.now())),
+      ]).then(([token]) => token);
 
       post('complete');
-      const cr = await fetch('/api/session/complete', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fingerprint: P.fingerprint, turnstileToken: tok }),
-      });
-      const body = (await cr.json()) as { token?: string; error?: string };
-      if (!body.token) throw new Error(body.error ?? `complete ${cr.status}`);
+      let completeBody: { token?: string; error?: string } | null = null;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const completeRes = await fetch('/api/session/complete', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fingerprint: P.fingerprint, turnstileToken }),
+        });
+        completeBody = (await completeRes.json()) as { token?: string; error?: string };
+        if (completeBody.token) break;
+        const err = (completeBody.error ?? '').toLowerCase();
+        if (!err.includes('timer') && !err.includes('wait')) break;
+        await sleep(3000);
+      }
+      if (!completeBody?.token) throw new Error(completeBody?.error ?? 'complete failed');
+
+      stopSocket(socket);
       post('redirect');
-      location.href = `/go/${encodeURIComponent(sess.sessionId)}?t=${encodeURIComponent(body.token)}`;
+      location.href = `/go/${encodeURIComponent(sessionJson.sessionId)}?t=${encodeURIComponent(completeBody.token)}`;
     } catch (e) {
+      stopSocket(socket);
       post('error', { message: String(e instanceof Error ? e.message : e) });
     }
   })();

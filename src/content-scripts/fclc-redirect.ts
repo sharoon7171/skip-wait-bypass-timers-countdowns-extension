@@ -1,6 +1,4 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { isCaptchaVerified } from '../utils/captcha-verifier';
-import { isCloudflareHumanVerificationDone } from '../utils/cloudflare-verifier';
 
 const CAPTCHA_IN_FORM = '[name="h-captcha-response"], [name="g-recaptcha-response"]';
 const HOSTS = [
@@ -11,11 +9,32 @@ const HOSTS = [
 const LINK_VIEW = '#link-view';
 const MSG_FCLC_ALERT_SUPPRESS = 'FCLC_ALERT_SUPPRESS';
 const SUBMIT_BTN = '#submitBtn';
+const TURNSTILE_RESPONSE = '[name="cf-turnstile-response"]';
 const VERIFICATION_FORMS = ['#verificationForm', '#verificationFormm'];
 
 const TICK_MS = 100;
 const SCROLL_EVERY = 5;
 const MAX_TICKS = 600;
+
+function hasNamedResponse(root: Element, selector: string): boolean {
+  for (const el of root.querySelectorAll(selector)) {
+    const v = (el as HTMLInputElement | HTMLTextAreaElement).value?.trim();
+    if (v?.length) return true;
+  }
+  return false;
+}
+
+function hasCfClearance(): boolean {
+  return /\bcf_clearance=/.test(document.cookie);
+}
+
+function isCloudflareDone(form: Element): boolean {
+  return hasNamedResponse(form, TURNSTILE_RESPONSE) || hasCfClearance();
+}
+
+function isCaptchaDone(form: Element): boolean {
+  return hasNamedResponse(form, CAPTCHA_IN_FORM) || hasCfClearance();
+}
 
 function getVerificationForm(): HTMLFormElement | null {
   for (const sel of VERIFICATION_FORMS) {
@@ -55,7 +74,7 @@ function runCloudflarePart(form: HTMLFormElement): void {
   const stopActivity = simulateActivity(form);
   let done = false;
   const check = (): void => {
-    if (done || !isCloudflareHumanVerificationDone(form) || btn.disabled) return;
+    if (done || !isCloudflareDone(form) || btn.disabled) return;
     done = true;
     stopActivity();
     obs.disconnect();
@@ -71,7 +90,7 @@ function runHcaptchaPart(form: HTMLFormElement): void {
   if (!form.querySelector(CAPTCHA_IN_FORM)) return;
   let done = false;
   const check = (): void => {
-    if (done || !isCaptchaVerified(form)) return;
+    if (done || !isCaptchaDone(form)) return;
     done = true;
     obs.disconnect();
     form.submit();

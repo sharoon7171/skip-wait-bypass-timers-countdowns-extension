@@ -1,5 +1,4 @@
 import { isAllowedHost } from '../utils/domain-check';
-import { isCloudflareHumanVerificationDone } from '../utils/cloudflare-verifier';
 
 const HOSTS = [
   'oii.la',
@@ -7,12 +6,19 @@ const HOSTS = [
 ] as const;
 const TOKEN_INPUT_SELECTOR = 'input[name="token"]';
 const TOKEN_HTTP_B64_PREFIX = 'aHR0c';
+const TURNSTILE_RESPONSE = '[name="cf-turnstile-response"]';
 
 let done = false;
 
 function padBase64(s: string): string {
   const p = s.length % 4;
   return p ? s + '='.repeat(4 - p) : s;
+}
+
+function isCloudflareDone(root: Element | Document): boolean {
+  const token = root.querySelector<HTMLInputElement | HTMLTextAreaElement>(TURNSTILE_RESPONSE)?.value?.trim();
+  if (token?.length) return true;
+  return /\bcf_clearance=/.test(document.cookie);
 }
 
 function destinationUrlFromAdlinkflyTokenPayload(token: string): string | null {
@@ -34,7 +40,7 @@ function destinationUrlFromAdlinkflyTokenPayload(token: string): string | null {
 function tryRedirect(): void {
   if (done) return;
   const input = document.querySelector<HTMLInputElement>(TOKEN_INPUT_SELECTOR);
-  if (!input || !isCloudflareHumanVerificationDone(input.form ?? undefined)) return;
+  if (!input || !isCloudflareDone(input.form ?? document)) return;
   const token = input.value?.trim();
   if (!token) return;
   const url = destinationUrlFromAdlinkflyTokenPayload(token);
