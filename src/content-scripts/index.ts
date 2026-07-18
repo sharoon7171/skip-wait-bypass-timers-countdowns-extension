@@ -25,6 +25,7 @@ import {
   initHubcloudDrive,
 } from '../sites/hdhub4u';
 import { initKitokolaDlGetBypass } from './kitokola-dl-get-bypass';
+import { initKotakanimeidOutPage } from '../sites/kotakanimeid';
 import { initLinkjust } from '../sites/linkjust';
 import { initLinksterrGateway } from '../sites/linksterr';
 import { initLlSafelinkHqChain } from '../sites/ll-safelink';
@@ -45,6 +46,8 @@ import { initTinurlzSoftinfoFragment } from './tinurlz-softinfo-fragment';
 import { initKaranpcMediatorPage } from '../sites/karanpc';
 import { initUsersdriveAutomation } from '../sites/usersdrive';
 import { initMega4uploadBypass } from '../sites/mega4upload';
+import { initMirroredFilesPage } from '../sites/mirrored';
+import { initMp4uploadCountdownBypass } from '../sites/mp4upload';
 import { initPlingDirectDownload } from '../sites/pling';
 import { initRarestudyProlinkWait } from '../sites/rarestudy';
 import { initStudyratnaProlinkBypass } from '../sites/studyratna';
@@ -79,6 +82,7 @@ const INITS = [
   initHubcdnDl,
   initHubcloudDrive,
   initKitokolaDlGetBypass,
+  initKotakanimeidOutPage,
   initOnhaxpkCopy,
   initOnlinetoolsDirectDownload,
   initOuoBypass,
@@ -92,6 +96,8 @@ const INITS = [
   initKaranpcMediatorPage,
   initUsersdriveAutomation,
   initMega4uploadBypass,
+  initMirroredFilesPage,
+  initMp4uploadCountdownBypass,
   initStudyratnaProlinkBypass,
   initRarestudyProlinkWait,
   initPlingDirectDownload,
