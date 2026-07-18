@@ -9,6 +9,7 @@ import { initLootlabsMainWorldInject } from '../sites/lootlabs';
 import { initXdmoviesMainWorldInject } from '../sites/xdmovies/mediator-page';
 import { initStudyratnaCookieDest } from '../sites/studyratna';
 import { initExeioAdblockInject } from '../sites/exeio';
+import { initCutyAdblockInject } from '../sites/cuty';
 
 initCoomeetMainWorldInject();
 initDocumentVisibilitySpoof();
@@ -22,3 +23,4 @@ initLootlabsMainWorldInject();
 initXdmoviesMainWorldInject();
 initStudyratnaCookieDest();
 initExeioAdblockInject();
+initCutyAdblockInject();

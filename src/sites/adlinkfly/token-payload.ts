@@ -1,4 +1,5 @@
 import { createFullPageOverlay, type FullPageOverlay } from '../../injected-ui/full-page-overlay';
+import { pinSiteWidgetOverOverlay } from '../../injected-ui/pin-site-widget';
 import { isAllowedHost } from '../../utils/domain-check';
 
 const HOSTS = [
@@ -6,18 +7,23 @@ const HOSTS = [
   'tpi.li',
 ] as const;
 const OVERLAY_ID = 'skip-wait-adlinkfly-token-overlay';
+const CAPTCHA_PIN_STYLE_ID = 'skip-wait-adlinkfly-token-captcha-pin';
 const CAPTCHA_WIDGET_ID = 'captchaShortlink';
 const TOKEN_INPUT_SELECTOR = 'input[name="token"]';
 const TOKEN_HTTP_B64_PREFIX = 'aHR0c';
 const TURNSTILE_RESPONSE = '[name="cf-turnstile-response"]';
 const TURNSTILE_READY_SELECTOR = 'iframe, .cf-turnstile, input[name="cf-turnstile-response"]';
+const TURNSTILE_IFRAMES = [
+  'iframe[src*="challenges.cloudflare.com"]',
+  'iframe[src*="turnstile"]',
+] as const;
 const CAPTCHA_NOTE = {
   lead: 'Confirm you’re human.',
   detail: 'Tap the checkbox below. We’ll continue automatically when it’s done.',
 } as const;
 
 let done = false;
-let pinned = false;
+let stopPin: (() => void) | null = null;
 let ui: FullPageOverlay | null = null;
 
 function padBase64(s: string): string {
@@ -67,17 +73,17 @@ function isTurnstileWidgetReady(): boolean {
 }
 
 function ensurePin(): void {
-  if (pinned || !isTurnstileWidgetReady()) return;
-  const box = document.getElementById(CAPTCHA_WIDGET_ID);
-  if (!box) return;
+  if (stopPin || !isTurnstileWidgetReady()) return;
+  if (!document.getElementById(CAPTCHA_WIDGET_ID)) return;
   const overlay = mountUi();
-  if (box.parentElement !== overlay.turnstileMount) {
-    overlay.turnstileMount.replaceChildren(box);
-    box.style.cssText =
-      'display:inline-block!important;margin:0 auto!important;pointer-events:auto!important;';
-  }
+  stopPin = pinSiteWidgetOverOverlay({
+    overlayId: OVERLAY_ID,
+    mount: overlay.turnstileMount,
+    widgetId: CAPTCHA_WIDGET_ID,
+    styleId: CAPTCHA_PIN_STYLE_ID,
+    alsoVisibleSelectors: TURNSTILE_IFRAMES,
+  });
   overlay.setStatus('Complete the captcha below.');
-  pinned = true;
 }
 
 function tryRedirect(): void {
@@ -89,6 +95,8 @@ function tryRedirect(): void {
   const url = destinationUrlFromAdlinkflyTokenPayload(token);
   if (!url) return;
   done = true;
+  stopPin?.();
+  stopPin = null;
   mountUi().setStatus('Redirecting now…');
   window.location.replace(url);
 }
