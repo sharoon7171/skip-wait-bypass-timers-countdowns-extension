@@ -54,8 +54,10 @@ import { initStudyratnaProlinkBypass } from '../sites/studyratna';
 import { initWahmiCountdownBypass } from '../sites/wahmi';
 import { initCutyGate } from '../sites/cuty';
 import { initExeioGate } from '../sites/exeio';
+import { initLinknextGate } from '../sites/linknext';
 
 const INITS = [
+  initLinknextGate,
   initCutyGate,
   initExeioGate,
   initLootlabsUnlock,

@@ -1,0 +1,1 @@
+export { initLinknextGate } from './gate';
