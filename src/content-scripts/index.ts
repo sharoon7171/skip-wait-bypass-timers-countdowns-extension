@@ -5,6 +5,7 @@ import {
   isOnCoomeetIframeHost,
   runCoomeetMainWorldAccelerator,
 } from './coomeet-iframe';
+import { initAdfocusRedirect } from '../sites/adfocus';
 import {
   initAdlinkClickVerifyPoll,
   initAdlinkflyLinksGo,
@@ -52,6 +53,7 @@ const INITS = [
   initLlSafelinkHqChain,
   initLinkjust,
   initShortxlinksSafelinkChain,
+  initAdfocusRedirect,
   initAdlinkClickVerifyPoll,
   initAdlinkflyLinksGo,
   initFourDownloadDirectLinks,
