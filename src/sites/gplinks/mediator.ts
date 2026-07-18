@@ -1,5 +1,5 @@
 import { createFullPageOverlay, type FullPageOverlay } from '../../injected-ui/full-page-overlay';
-import { hostnameMatches, isAllowedHost, whenDomParsed } from '../../utils/domain-check';
+import { hostnameMatches, isAllowedHost } from '../../utils/domain-check';
 import { GPLINKS_HOSTS } from './hosts';
 import { GPLINKS_MEDIATOR_HOSTS } from './mediator-hosts';
 
@@ -43,16 +43,10 @@ function readMediatorCookies(): MediatorCookies | null {
   return { lid, pid, vid, pages, stepCount, imps };
 }
 
-function isMediatorPage(): boolean {
-  if (!isAllowedHost(GPLINKS_MEDIATOR_HOSTS)) return false;
-  if (!document.querySelector(FORM_SEL)) return false;
-  return !!readMediatorCookies();
-}
-
 function stripAdblockUi(): void {
   document.getElementById('AdbModel')?.remove();
   for (const el of document.querySelectorAll('.adb-overlay, .adb-popup')) el.remove();
-  document.body.style.removeProperty('overflow');
+  document.body?.style.removeProperty('overflow');
 }
 
 function finalUrl(c: MediatorCookies): string {
@@ -83,25 +77,35 @@ function collectStepTargets(need: number): string[] {
   return Array.from({ length: need }, (_, i) => unique[i % unique.length]!);
 }
 
+let ui: FullPageOverlay | null = null;
+
 function mountUi(step: number, pages: number): FullPageOverlay {
-  return createFullPageOverlay({
+  const note = {
+    lead: 'Bypassing GPLinks mediator…',
+    detail: `Step ${step} of ${pages} — waiting the verified window, then continuing.`,
+  };
+  if (ui) {
+    ui.setNote(note);
+    ui.setStatus('Waiting…');
+    return ui;
+  }
+  ui = createFullPageOverlay({
     id: OVERLAY_ID,
     brand: 'Skip Wait',
-    note: {
-      lead: 'Bypassing GPLinks mediator…',
-      detail: `Step ${step} of ${pages} — waiting the verified window, then continuing.`,
-    },
+    note,
     status: 'Waiting…',
     countdownLabel: 'Continue in',
   });
+  return ui;
 }
 
-async function runStep(ui: FullPageOverlay): Promise<void> {
+async function runStep(overlay: FullPageOverlay): Promise<void> {
   const cookies = readMediatorCookies();
   if (!cookies) return;
 
   const step = cookies.stepCount + 1;
   if (step > cookies.pages) {
+    overlay.setStatus('Opening GPLinks…');
     location.replace(finalUrl(cookies));
     return;
   }
@@ -110,18 +114,18 @@ async function runStep(ui: FullPageOverlay): Promise<void> {
   stripAdblockUi();
 
   const endAt = Date.now() + STEP_WAIT_MS;
-  ui.setNote({
+  overlay.setNote({
     lead: 'Bypassing GPLinks mediator…',
     detail: `Step ${step} of ${cookies.pages} — waiting the verified window, then continuing.`,
   });
-  ui.setStatus(`Waiting ${STEP_WAIT_MS / 1000}s before step ${step}…`);
-  ui.startCountdown(endAt);
+  overlay.setStatus(`Waiting ${STEP_WAIT_MS / 1000}s before step ${step}…`);
+  overlay.startCountdown(endAt);
   await sleep(STEP_WAIT_MS);
-  ui.hideCountdown();
+  overlay.hideCountdown();
 
   const form = document.querySelector<HTMLFormElement>(FORM_SEL);
   if (!form) {
-    ui.setStatus('Mediator form missing — reload and try again.');
+    overlay.setStatus('Mediator form missing — reload and try again.');
     return;
   }
 
@@ -142,7 +146,7 @@ async function runStep(ui: FullPageOverlay): Promise<void> {
     !(visitorId instanceof HTMLInputElement) ||
     !(nextField instanceof HTMLInputElement)
   ) {
-    ui.setStatus('Mediator form fields missing — reload and try again.');
+    overlay.setStatus('Mediator form fields missing — reload and try again.');
     return;
   }
 
@@ -151,22 +155,58 @@ async function runStep(ui: FullPageOverlay): Promise<void> {
   visitorId.value = cookies.vid;
   nextField.value = nextTarget;
 
-  ui.setStatus(ready ? 'Opening GPLinks…' : `Continuing to step ${step}…`);
+  overlay.setStatus(ready ? 'Opening GPLinks…' : `Continuing to step ${step}…`);
   form.submit();
 }
 
 export function initGplinksMediator(): void {
-  whenDomParsed(() => {
-    if (!isMediatorPage()) return;
-    if (hostnameMatches(location.hostname, GPLINKS_HOSTS)) return;
+  if (!isAllowedHost(GPLINKS_MEDIATOR_HOSTS)) return;
+  if (hostnameMatches(location.hostname, GPLINKS_HOSTS)) return;
+
+  let started = false;
+  let covered = false;
+
+  const coverIfMediator = (): void => {
+    if (covered) return;
     if (sessionStorage.getItem(RUN_KEY) === location.href) return;
-    sessionStorage.setItem(RUN_KEY, location.href);
     const cookies = readMediatorCookies();
     if (!cookies) return;
+    covered = true;
     const step = Math.min(cookies.stepCount + 1, cookies.pages);
-    const ui = mountUi(step, cookies.pages);
-    void runStep(ui).catch(() => {
-      ui.setStatus('Something went wrong — reload and try again.');
+    mountUi(step, cookies.pages);
+  };
+
+  const tryStart = (): void => {
+    if (sessionStorage.getItem(RUN_KEY) === location.href) return;
+    coverIfMediator();
+    if (started) return;
+    if (!document.querySelector(FORM_SEL)) return;
+    const cookies = readMediatorCookies();
+    if (!cookies) return;
+    started = true;
+    sessionStorage.setItem(RUN_KEY, location.href);
+    const step = Math.min(cookies.stepCount + 1, cookies.pages);
+    const overlay = mountUi(step, cookies.pages);
+    void runStep(overlay).catch(() => {
+      overlay.setStatus('Something went wrong — reload and try again.');
     });
+  };
+
+  tryStart();
+  if (started) return;
+
+  const mo = new MutationObserver(() => {
+    tryStart();
+    if (started) mo.disconnect();
   });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+
+  const onReady = (): void => {
+    tryStart();
+    if (started || document.readyState === 'complete') {
+      document.removeEventListener('readystatechange', onReady);
+      if (started) mo.disconnect();
+    }
+  };
+  document.addEventListener('readystatechange', onReady);
 }

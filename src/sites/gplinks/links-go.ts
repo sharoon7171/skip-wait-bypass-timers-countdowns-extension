@@ -36,15 +36,9 @@ const requestVisibilitySpoof = (): void => {
   chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
 };
 
-const dropUi = (): void => {
-  ui?.remove();
-  ui = null;
-};
-
 const exitTurnstilePhase = (phase: TurnstilePhase): void => {
   phase.stopPin?.();
   phase.stopPin = null;
-  dropUi();
   phase.done = true;
 };
 
@@ -57,13 +51,20 @@ const counterSec = (): number => {
   return Number.isFinite(n) && n > 0 ? n : 0;
 };
 
-const mountUi = (): FullPageOverlay => {
-  if (ui) return ui;
+const mountUi = (
+  note: typeof NOTE | typeof TURNSTILE_NOTE = NOTE,
+  status = 'Getting things ready…',
+): FullPageOverlay => {
+  if (ui) {
+    ui.setNote(note);
+    ui.setStatus(status);
+    return ui;
+  }
   ui = createFullPageOverlay({
     id: OVERLAY_ID,
     brand: 'Skip Wait',
-    note: NOTE,
-    status: 'Getting things ready…',
+    note,
+    status,
     countdownLabel: 'Your link opens in',
   });
   return ui;
@@ -78,28 +79,26 @@ const postFromPage = (): Promise<string | null> => {
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 const finishTimerUnlock = async (overlay: FullPageOverlay): Promise<string | null> => {
-  revealTimerLinks();
-  const link = document.querySelector<HTMLAnchorElement>('a.get-link');
-  if (link?.href && isRealUrl(link.href)) return link.href;
-
-  let url = await postFromPage();
-  if (url) return url;
+  const existing = document.querySelector<HTMLAnchorElement>('a.get-link');
+  if (existing?.href && isRealUrl(existing.href)) return existing.href;
 
   const sec = counterSec();
   if (sec > 0) {
     requestVisibilitySpoof();
     overlay.setStatus('Waiting for timer…');
     overlay.startCountdown(Date.now() + sec * 1000);
-    const endAt = Date.now() + (sec + 2) * 1000;
-    while (Date.now() < endAt) {
-      revealTimerLinks();
-      url = await postFromPage();
-      if (url) return url;
-      await sleep(200);
-    }
+    await sleep(sec * 1000);
+    overlay.hideCountdown();
   }
 
   revealTimerLinks();
+  const pollEnd = Date.now() + 2500;
+  while (Date.now() < pollEnd) {
+    const link = document.querySelector<HTMLAnchorElement>('a.get-link');
+    if (link?.href && isRealUrl(link.href)) return link.href;
+    await sleep(250);
+  }
+
   return postFromPage();
 };
 
@@ -146,9 +145,7 @@ const runTurnstilePhase = (form: HTMLFormElement, phase: TurnstilePhase): void =
   if (phase.started || phase.done) return;
   phase.started = true;
 
-  const overlay = mountUi();
-  overlay.setNote(TURNSTILE_NOTE);
-  overlay.setStatus('Waiting for Turnstile…');
+  const overlay = mountUi(TURNSTILE_NOTE, 'Waiting for Turnstile…');
 
   const ensurePin = (): void => {
     if (phase.done || phase.stopPin) return;
@@ -176,16 +173,7 @@ const runTurnstilePhase = (form: HTMLFormElement, phase: TurnstilePhase): void =
       return;
     }
     exitTurnstilePhase(phase);
-    void (async () => {
-      const unlockUi = mountUi();
-      unlockUi.setNote(NOTE);
-      const url = await finishTimerUnlock(unlockUi);
-      if (url) {
-        redirectTo(url);
-        return;
-      }
-      form.submit();
-    })();
+    mountUi(NOTE, 'Getting things ready…');
   };
   requestAnimationFrame(tick);
 };
@@ -206,12 +194,15 @@ const runTimerPhase = async (state: { done: boolean; inFlight: boolean }): Promi
 
   state.inFlight = true;
   try {
-    const overlay = mountUi();
-    overlay.setNote(NOTE);
+    const overlay = mountUi(NOTE, 'Getting things ready…');
     const url = await finishTimerUnlock(overlay);
-    if (!url) return false;
     state.done = true;
-    redirectTo(url);
+    if (url) {
+      redirectTo(url);
+      return true;
+    }
+    overlay.setStatus('Opening destination…');
+    form.submit();
     return true;
   } finally {
     state.inFlight = false;
@@ -220,6 +211,7 @@ const runTimerPhase = async (state: { done: boolean; inFlight: boolean }): Promi
 
 const startGplinksLinksGo = (): void => {
   requestVisibilitySpoof();
+  mountUi(NOTE, 'Getting things ready…');
   const turnstilePhase: TurnstilePhase = { started: false, done: false, stopPin: null };
   const timerState = { done: false, inFlight: false };
   let finished = false;
