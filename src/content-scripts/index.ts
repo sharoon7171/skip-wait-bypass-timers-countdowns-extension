@@ -11,6 +11,7 @@ import {
   initAdlinkflyLinksGo,
   initAdlinkflyTokenPayload,
 } from '../sites/adlinkfly';
+import { initGplinksGate, initGplinksLinksGo, initGplinksMediator } from '../sites/gplinks';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article';
 import { initClipiRedirect } from '../sites/clipi';
 import { initCookiesceoCopy } from './cookiesceo-copy';
@@ -54,6 +55,9 @@ const INITS = [
   initLinkjust,
   initShortxlinksSafelinkChain,
   initAdfocusRedirect,
+  initGplinksGate,
+  initGplinksMediator,
+  initGplinksLinksGo,
   initAdlinkClickVerifyPoll,
   initAdlinkflyLinksGo,
   initFourDownloadDirectLinks,

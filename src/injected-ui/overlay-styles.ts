@@ -34,7 +34,14 @@ export function overlayActiveClass(overlayId: string): string {
 }
 
 export function overlayPageLockCss(overlayId: string, activeClass: string): string {
-  return `html.${activeClass} body{overflow:hidden!important;touch-action:none!important;user-select:none!important;-webkit-user-select:none!important}html.${activeClass} body>*:not(#${overlayId}){visibility:hidden!important;pointer-events:none!important}`;
+  return (
+    `html.${activeClass},html.${activeClass} body{overflow:hidden!important;touch-action:none!important;user-select:none!important;-webkit-user-select:none!important}` +
+    `html.${activeClass}>*:not(head):not(body):not(#${overlayId}){display:none!important;visibility:hidden!important;pointer-events:none!important}` +
+    `html.${activeClass} body{pointer-events:none!important}` +
+    `html.${activeClass} body *{visibility:hidden!important;pointer-events:none!important}` +
+    `html.${activeClass} #${overlayId},html.${activeClass} #${overlayId} *{visibility:visible!important}` +
+    `html.${activeClass} #${overlayId}{pointer-events:auto!important}`
+  );
 }
 
 export function overlayRootCss(id: string): string {

@@ -135,6 +135,17 @@ export function createFullPageOverlay(options: FullPageOverlayOptions): FullPage
   root.appendChild(card);
   document.documentElement.appendChild(root);
 
+  const keepOnTop = new MutationObserver(() => {
+    if (root.parentElement !== document.documentElement) {
+      document.documentElement.appendChild(root);
+      return;
+    }
+    if (document.documentElement.lastElementChild !== root) {
+      document.documentElement.appendChild(root);
+    }
+  });
+  keepOnTop.observe(document.documentElement, { childList: true });
+
   let rafId = 0;
 
   const setCountdownVisible = (visible: boolean): void => {
@@ -179,6 +190,7 @@ export function createFullPageOverlay(options: FullPageOverlayOptions): FullPage
     hideCountdown: () => stopCountdown(true),
     remove() {
       stopCountdown(true);
+      keepOnTop.disconnect();
       root.remove();
       document.documentElement.classList.remove(activeClass);
     },
