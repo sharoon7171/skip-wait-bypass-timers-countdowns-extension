@@ -26,6 +26,7 @@ import {
 } from '../sites/hdhub4u';
 import { initKitokolaDlGetBypass } from './kitokola-dl-get-bypass';
 import { initLinkjust } from '../sites/linkjust';
+import { initLinksterrGateway } from '../sites/linksterr';
 import { initLlSafelinkHqChain } from '../sites/ll-safelink';
 import { initLootlabsUnlock } from '../sites/lootlabs';
 import { initMoviesModContentScript } from '../sites/movies-mod';
@@ -53,6 +54,7 @@ const INITS = [
   initLootlabsUnlock,
   initLlSafelinkHqChain,
   initLinkjust,
+  initLinksterrGateway,
   initShortxlinksSafelinkChain,
   initAdfocusRedirect,
   initGplinksGate,
