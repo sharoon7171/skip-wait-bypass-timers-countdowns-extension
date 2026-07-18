@@ -1,6 +1,6 @@
 import { initCoomeetMainWorldInject } from './coomeet-main-world-inject';
 import { initDocumentVisibilitySpoof } from './document-visibility-spoof';
-import { initFclcAlertSuppress } from './fclc-alert-suppress';
+import { initFclcAlertSuppress, initFclcLinksGo } from '../sites/fclc';
 import { initFlightsimDownloadPatch } from '../sites/flightsim';
 import { initShortxlinksFetchChain } from './shortxlinks-fetch-chain';
 import { initXdmoviesLandingPageNav } from '../sites/xdmovies/landing-page-med';
@@ -12,6 +12,7 @@ import { initStudyratnaCookieDest } from '../sites/studyratna';
 initCoomeetMainWorldInject();
 initDocumentVisibilitySpoof();
 initFclcAlertSuppress();
+initFclcLinksGo();
 initFlightsimDownloadPatch();
 initShortxlinksFetchChain();
 initXdmoviesLandingPageNav();

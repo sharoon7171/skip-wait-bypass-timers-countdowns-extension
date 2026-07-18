@@ -16,7 +16,7 @@ import { initBitcotasksReadArticle } from './bitcotasks-read-article';
 import { initClipiRedirect } from '../sites/clipi';
 import { initCookiesceoCopy } from './cookiesceo-copy';
 import { initFastdlZipRedirect } from './fastdl-zip-redirect';
-import { initFclcRedirect } from './fclc-redirect';
+import { initFclcMediatorPage, initFclcShortlinkPage } from '../sites/fclc';
 import { initFilePressDirectDownload } from '../sites/filepress';
 import {
   initHdhub4uLandingPageMed,
@@ -72,7 +72,8 @@ const INITS = [
   initCookiesceoCopy,
   initFastdlZipRedirect,
   initFilePressDirectDownload,
-  initFclcRedirect,
+  initFclcShortlinkPage,
+  initFclcMediatorPage,
   initHdhub4uLandingPageMed,
   initHdhub4uMediatorPage,
   initHubcdnDl,
