@@ -52,8 +52,10 @@ import { initPlingDirectDownload } from '../sites/pling';
 import { initRarestudyProlinkWait } from '../sites/rarestudy';
 import { initStudyratnaProlinkBypass } from '../sites/studyratna';
 import { initWahmiCountdownBypass } from '../sites/wahmi';
+import { initExeioGate } from '../sites/exeio';
 
 const INITS = [
+  initExeioGate,
   initLootlabsUnlock,
   initLlSafelinkHqChain,
   initLinkjust,
