@@ -17,6 +17,7 @@ import { initClipiRedirect } from '../sites/clipi';
 import { initCookiesceoCopy } from './cookiesceo-copy';
 import { initFastdlZipRedirect } from './fastdl-zip-redirect';
 import { initFclcMediatorPage, initFclcShortlinkPage } from '../sites/fclc';
+import { initIcutlinkLinksGo, initIcutlinkMediatorPage } from '../sites/icutlink';
 import { initFilePressDirectDownload } from '../sites/filepress';
 import {
   initHdhub4uLandingPageMed,
@@ -85,6 +86,8 @@ const INITS = [
   initFilePressDirectDownload,
   initFclcShortlinkPage,
   initFclcMediatorPage,
+  initIcutlinkMediatorPage,
+  initIcutlinkLinksGo,
   initHdhub4uLandingPageMed,
   initHdhub4uMediatorPage,
   initHubcdnDl,
