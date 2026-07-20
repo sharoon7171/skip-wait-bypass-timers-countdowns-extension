@@ -48,6 +48,7 @@ import { initKaranpcMediatorPage } from '../sites/karanpc';
 import { initUsersdriveAutomation } from '../sites/usersdrive';
 import { initMega4uploadBypass } from '../sites/mega4upload';
 import { initMirroredFilesPage } from '../sites/mirrored';
+import { initMove2linkGate } from '../sites/move2link';
 import { initMp4uploadCountdownBypass } from '../sites/mp4upload';
 import { initPlingDirectDownload } from '../sites/pling';
 import { initRarestudyProlinkWait } from '../sites/rarestudy';
@@ -108,6 +109,7 @@ const INITS = [
   initUsersdriveAutomation,
   initMega4uploadBypass,
   initMirroredFilesPage,
+  initMove2linkGate,
   initMp4uploadCountdownBypass,
   initStudyratnaProlinkBypass,
   initRarestudyProlinkWait,
