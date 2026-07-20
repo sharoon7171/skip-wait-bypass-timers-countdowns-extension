@@ -28,7 +28,9 @@ import {
 import { initKitokolaDlGetBypass } from './kitokola-dl-get-bypass';
 import { initKotakanimeidOutPage } from '../sites/kotakanimeid';
 import { initLinkjust } from '../sites/linkjust';
+import { initLinknextGate } from '../sites/linknext';
 import { initLinksterrGateway } from '../sites/linksterr';
+import { initLinkvertiseAccessPage } from '../sites/linkvertise';
 import { initLlSafelinkHqChain } from '../sites/ll-safelink';
 import { initLootlabsUnlock } from '../sites/lootlabs';
 import { initMoviesModContentScript } from '../sites/movies-mod';
@@ -56,12 +58,12 @@ import { initStudyratnaProlinkBypass } from '../sites/studyratna';
 import { initWahmiCountdownBypass } from '../sites/wahmi';
 import { initCutyGate } from '../sites/cuty';
 import { initExeioGate } from '../sites/exeio';
-import { initLinknextGate } from '../sites/linknext';
 import { initStorylineCoursePlayBrand } from '../sites/storyline-scorm';
 
 const INITS = [
   initStorylineCoursePlayBrand,
   initLinknextGate,
+  initLinkvertiseAccessPage,
   initCutyGate,
   initExeioGate,
   initLootlabsUnlock,
