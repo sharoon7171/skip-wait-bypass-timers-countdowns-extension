@@ -55,8 +55,10 @@ import { initWahmiCountdownBypass } from '../sites/wahmi';
 import { initCutyGate } from '../sites/cuty';
 import { initExeioGate } from '../sites/exeio';
 import { initLinknextGate } from '../sites/linknext';
+import { initStorylineCoursePlayBrand } from '../sites/storyline-scorm';
 
 const INITS = [
+  initStorylineCoursePlayBrand,
   initLinknextGate,
   initCutyGate,
   initExeioGate,
