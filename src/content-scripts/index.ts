@@ -11,7 +11,9 @@ import {
   initAdlinkflyLinksGo,
   initAdlinkflyTokenPayload,
 } from '../sites/adlinkfly';
+import { initArolinksUnlock, initArolinksMediator } from '../sites/arolinks';
 import { initGplinksGate, initGplinksLinksGo, initGplinksMediator } from '../sites/gplinks';
+import { initNitrolinkMediator, initNitrolinkUnlock } from '../sites/nitrolink';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article';
 import { initClipiRedirect } from '../sites/clipi';
 import { initCookiesceoCopy } from './cookiesceo-copy';
@@ -75,6 +77,10 @@ const INITS = [
   initGplinksGate,
   initGplinksMediator,
   initGplinksLinksGo,
+  initArolinksMediator,
+  initArolinksUnlock,
+  initNitrolinkMediator,
+  initNitrolinkUnlock,
   initAdlinkClickVerifyPoll,
   initAdlinkflyLinksGo,
   initFourDownloadDirectLinks,
