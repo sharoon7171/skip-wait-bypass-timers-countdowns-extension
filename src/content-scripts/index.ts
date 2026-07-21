@@ -14,6 +14,7 @@ import {
 import { initArolinksUnlock, initArolinksMediator } from '../sites/arolinks';
 import { initGplinksGate, initGplinksLinksGo, initGplinksMediator } from '../sites/gplinks';
 import { initNitrolinkMediator, initNitrolinkUnlock } from '../sites/nitrolink';
+import { initCut4moneyMediator, initCut4moneyUnlock } from '../sites/cut4money';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article';
 import { initClipiRedirect } from '../sites/clipi';
 import { initCookiesceoCopy } from './cookiesceo-copy';
@@ -81,6 +82,8 @@ const INITS = [
   initArolinksUnlock,
   initNitrolinkMediator,
   initNitrolinkUnlock,
+  initCut4moneyMediator,
+  initCut4moneyUnlock,
   initAdlinkClickVerifyPoll,
   initAdlinkflyLinksGo,
   initFourDownloadDirectLinks,
