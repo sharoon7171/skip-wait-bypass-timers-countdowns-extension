@@ -14,11 +14,17 @@ function inject(tabId: number, frameId?: number): void {
   void chrome.scripting.executeScript({
     target: frameId === undefined ? { tabId } : { tabId, frameIds: [frameId] },
     world: 'MAIN',
+    injectImmediately: true,
     func: runCutyAdblockBypass,
   });
 }
 
 export function initCutyAdblockInject(): void {
+  chrome.webNavigation.onCommitted.addListener((details) => {
+    if (details.frameId !== 0 || !isCutyUrl(details.url)) return;
+    inject(details.tabId, 0);
+  });
+
   chrome.runtime.onMessage.addListener((message, sender) => {
     if (message?.type !== MSG_CUTY_ADBLOCK) return false;
     const tabId = sender.tab?.id;

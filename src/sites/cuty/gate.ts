@@ -128,7 +128,10 @@ const turnstileToken = (root: ParentNode = document): string | null => {
   return null;
 };
 
-const isCaptchaSolved = (): boolean => !!turnstileToken(document);
+const hasTurnstileFrame = (root: ParentNode = document): boolean =>
+  !!root.querySelector(
+    'iframe[src*="challenges.cloudflare.com"], iframe[src*="turnstile"]',
+  );
 
 const liveCountdownSec = (): number => {
   const live = (window as unknown as { countdownValue?: number }).countdownValue;
@@ -171,7 +174,9 @@ const putTokenOnForm = (form: HTMLFormElement, token: string): void => {
 };
 
 const findTurnstileWidget = (form: HTMLFormElement): HTMLElement | null => {
-  const box = form.querySelector<HTMLElement>(`#${TURNSTILE_WIDGET_ID}`) || form.querySelector<HTMLElement>('.cf-turnstile');
+  const box =
+    form.querySelector<HTMLElement>(`#${TURNSTILE_WIDGET_ID}`) ||
+    form.querySelector<HTMLElement>('.cf-turnstile');
   if (box) {
     if (!box.id) box.id = TURNSTILE_WIDGET_ID;
     return box;
@@ -192,7 +197,9 @@ const snapCaptchaForm = (): void => {
   const form = freeForm();
   if (!form?.querySelector(`#${TURNSTILE_WIDGET_ID}, .cf-turnstile`)) return;
   try {
-    sessionStorage.setItem('sw-cuty-form-snap', form.outerHTML);
+    const clone = form.cloneNode(true) as HTMLElement;
+    clone.querySelector(`#${TURNSTILE_WIDGET_ID}, .cf-turnstile`)?.replaceChildren();
+    sessionStorage.setItem('sw-cuty-form-snap', clone.outerHTML);
   } catch {}
 };
 
@@ -203,7 +210,8 @@ const releasePin = (phase: PinPhase): void => {
 
 async function waitPageTurnstile(overlay: FullPageOverlay): Promise<string | null> {
   overlay.setNote(CAPTCHA_NOTE);
-  overlay.setStatus('Waiting for captcha…');
+  overlay.setStatus('Complete the captcha below.');
+  requestAdblockBypass();
 
   return new Promise((resolve) => {
     const phase: PinPhase = { stopPin: null };
@@ -222,15 +230,17 @@ async function waitPageTurnstile(overlay: FullPageOverlay): Promise<string | nul
 
     const pin = (): void => {
       if (done) return;
+      snapCaptchaForm();
       const live = freeForm();
-      if (!live) return;
+      if (!live) {
+        if (document.querySelector('button.ab')) requestAdblockBypass();
+        return;
+      }
       const widget = findTurnstileWidget(live);
       if (!widget) return;
       const widgetId = widget.id || TURNSTILE_WIDGET_ID;
-      if (phase.stopPin && document.getElementById(widgetId)) {
-        if (isCaptchaSolved() || live.querySelector('iframe')) overlay.setStatus('Complete the captcha below.');
-        return;
-      }
+      if (!widget.id) widget.id = widgetId;
+      if (phase.stopPin && document.getElementById(widgetId)) return;
       releasePin(phase);
       phase.stopPin = pinSiteWidgetOverOverlay({
         overlayId: OVERLAY_ID,
@@ -240,13 +250,15 @@ async function waitPageTurnstile(overlay: FullPageOverlay): Promise<string | nul
         alsoVisibleSelectors: TURNSTILE_IFRAMES,
       });
       if (!pinAt) pinAt = Date.now();
-      overlay.setStatus(isCaptchaSolved() || live.querySelector('iframe') ? 'Complete the captcha below.' : 'Waiting for captcha…');
     };
 
     const check = (): void => {
       if (done || finishing) return;
       pin();
       const form = freeForm();
+      if (hasTurnstileFrame(form ?? document) || hasTurnstileFrame(document)) {
+        overlay.setStatus('Complete the captcha below.');
+      }
       const token = (form ? turnstileToken(form) : null) || turnstileToken(document);
       if (!token || !pinAt || Date.now() - pinAt < 400) return;
       finishing = true;
@@ -305,7 +317,9 @@ async function finishFromLast(overlay: FullPageOverlay): Promise<void> {
 async function runCaptchaThenGo(overlay: FullPageOverlay): Promise<void> {
   snapCaptchaForm();
   requestAdblockBypass();
-  overlay.setStatus('Restoring captcha…');
+  overlay.setNote(CAPTCHA_NOTE);
+  overlay.setStatus('Complete the captcha below.');
+
   const ready = await waitFor(() => {
     snapCaptchaForm();
     return freeForm()?.querySelector(`#${TURNSTILE_WIDGET_ID}, .cf-turnstile, ${TURNSTILE_RESPONSE}`);
@@ -336,6 +350,8 @@ async function runCaptchaThenGo(overlay: FullPageOverlay): Promise<void> {
 async function runUnlock(): Promise<void> {
   const overlay = mountUi(NOTE, 'Getting things ready…');
   requestVisibilitySpoof();
+  requestAdblockBypass();
+  snapCaptchaForm();
 
   if (!cutyAliasFromPath()) {
     overlay.setError('cuty link alias not found.');
@@ -394,6 +410,8 @@ export function initCutyGate(): void {
 
   bootOverlayLock();
   mountUi(NOTE, 'Getting things ready…');
+  requestAdblockBypass();
+  snapCaptchaForm();
 
   const tryStart = (): void => {
     if (started) return;
