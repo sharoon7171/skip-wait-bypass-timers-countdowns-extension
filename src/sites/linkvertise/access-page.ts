@@ -90,12 +90,11 @@ const applySuccessTarget = (ready: SuccessTarget, overlay: FullPageOverlay): voi
 };
 
 const runSuccessPage = (): void => {
-  if (started || finished || !isYourTargetPath()) return;
+  if (finished || !isYourTargetPath()) return;
   const ready = readSuccessTarget();
   if (!ready) return;
 
   started = true;
-  finished = true;
   const overlay = mountUi(
     ready.kind === 'url' ? 'Opening your link…' : 'Copying your content…',
   );
@@ -120,7 +119,9 @@ const runAccessPage = (): void => {
     },
     onWaitDone: () => overlay.hideCountdown(),
   })
-    .then((ready) => applySuccessTarget(ready, overlay))
+    .then((ready) => {
+      if (!finished) applySuccessTarget(ready, overlay);
+    })
     .catch(() => {
       if (finished) return;
       const ready = readSuccessTarget();
@@ -152,22 +153,20 @@ export function initLinkvertiseAccessPage(): void {
   };
 
   tick();
-  if (started || finished) return;
+  if (finished) return;
 
   const mo = new MutationObserver(() => {
     tick();
-    if (started || finished) mo.disconnect();
+    if (finished) mo.disconnect();
   });
   mo.observe(document.documentElement, { childList: true, subtree: true });
 
-  if (isYourTargetPath()) {
-    let polls = 0;
-    const poll = window.setInterval(() => {
-      polls += 1;
-      tick();
-      if (started || finished || polls >= 40) window.clearInterval(poll);
-    }, 250);
-  }
+  let polls = 0;
+  const poll = window.setInterval(() => {
+    polls += 1;
+    tick();
+    if (finished || polls >= 80) window.clearInterval(poll);
+  }, 250);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', tick, true);
