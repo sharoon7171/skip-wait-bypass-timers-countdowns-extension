@@ -67,6 +67,7 @@ import { initStudyratnaProlinkBypass } from '../sites/studyratna';
 import { initTipsguruRedirect } from '../sites/tipsguru';
 import { initWahmiCountdownBypass } from '../sites/wahmi';
 import { initCutyGate } from '../sites/cuty';
+import { initCutwinGate } from '../sites/cutwin';
 import { initExeioGate } from '../sites/exeio';
 import { initStorylineCoursePlayBrand } from '../sites/storyline-scorm';
 
@@ -75,6 +76,7 @@ const INITS = [
   initLinknextGate,
   initLinkvertiseAccessPage,
   initCutyGate,
+  initCutwinGate,
   initExeioGate,
   initLootlabsUnlock,
   initLlSafelinkHqChain,
