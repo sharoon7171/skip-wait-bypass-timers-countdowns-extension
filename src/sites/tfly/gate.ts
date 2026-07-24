@@ -262,11 +262,7 @@ const runUnlock = async (): Promise<void> => {
 const tick = (): void => {
   if (runContinue()) return;
   if (runCaptcha()) return;
-  if (isUnlockShell()) {
-    void runUnlock();
-    return;
-  }
-  mountUi(NOTE, 'Getting things ready…');
+  if (isUnlockShell()) void runUnlock();
 };
 
 export function initTflyGate(): void {
@@ -274,8 +270,6 @@ export function initTflyGate(): void {
   if (!isAllowedHost(TFLY_HOSTS)) return;
   if (!isAliasPath()) return;
 
-  bootOverlayLock();
-  mountUi(NOTE, 'Getting things ready…');
   tick();
 
   const mo = new MutationObserver(tick);
