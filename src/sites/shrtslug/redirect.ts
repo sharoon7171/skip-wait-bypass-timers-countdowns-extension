@@ -15,6 +15,11 @@ const NOTE = {
 let ui: FullPageOverlay | null = null;
 let started = false;
 
+const isAliasPath = (): boolean => {
+  const parts = location.pathname.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+  return parts.length === 1;
+};
+
 const bootOverlayLock = (): void => {
   const active = overlayActiveClass(OVERLAY_ID);
   document.documentElement.classList.add(active);
@@ -83,6 +88,7 @@ const run = (): void => {
 export function initShrtslugRedirect(): void {
   if (window !== window.top) return;
   if (!isAllowedHost(HOSTS)) return;
+  if (!isAliasPath()) return;
 
   bootOverlayLock();
   mountUi('Getting things ready…');
