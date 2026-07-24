@@ -1,5 +1,8 @@
 export function runRinkuPageHooks(): void {
-  const w = window as unknown as Record<string, unknown>;
+  const w = window as unknown as {
+    __skipWaitRinkuStorage?: boolean;
+    __skipWaitRinkuClickGuard?: boolean;
+  };
   const noop = (): void => {};
 
   for (const [name, value] of [
@@ -8,7 +11,7 @@ export function runRinkuPageHooks(): void {
     ['tabSwitchedTime', Date.now() - 120_000],
     ['redirectToErrorPage', noop],
   ] as const) {
-    Object.defineProperty(w, name, {
+    Object.defineProperty(window, name, {
       configurable: true,
       enumerable: true,
       get: () => value,
