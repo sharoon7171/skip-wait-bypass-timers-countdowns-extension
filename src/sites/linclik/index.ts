@@ -1,0 +1,1 @@
+export { initLinclikGate } from './gate';
