@@ -1,75 +1,124 @@
-import { isAllowedHost, whenDomParsed } from '../utils/domain-check';
+import { createFullPageOverlay, type FullPageOverlay } from '../../injected-ui/full-page-overlay';
+import { buildFullPageOverlayCss, overlayActiveClass } from '../../injected-ui/overlay-styles';
+import { whenDomParsed } from '../../utils/domain-check';
 import {
   SHORTX_CHECK_UNLOCK,
   SHORTX_FETCH_CHAIN,
   shortxResultKey,
   type ShortxFetchResult,
-} from './shortxlinks-chain';
+} from './chain';
+import {
+  isShortxHost,
+  isShortxMediatorHost,
+  isShortxMediatorPage,
+  isShortxPipelinePage,
+  isShortxTimerPage,
+  isShortxTokenUrl,
+  SHORTX_AD_WAIT_MS,
+  shortxAliasFromAdlinkfly,
+  shortxAliasFromPath,
+  shortxStartUrl,
+  shortxStartUrlFromText,
+} from './hosts';
 
-const HOSTS = [
-  'shortxlinks.com',
-  'flexthecar.com',
-  'nkrmusic.in.net',
-] as const;
-const AD_WAIT_MS = 22_000;
+const OVERLAY_ID = 'skip-wait-shortxlinks-overlay';
+const BOOT_STYLE_ID = 'skip-wait-shortxlinks-boot';
 const UNLOCK_POLL_MS = 250;
 const SESSION_START = 'sw-shortx-start-url';
 const SESSION_TOKEN = 'sw-shortx-token-url';
 const SESSION_AD_TIME = 'sw-shortx-ad-time';
 
+const NOTE = {
+  lead: 'Hang tight — unlocking your link.',
+  detail: "You don't need to tap anything on the page.",
+} as const;
+
 type StoredResult = { tokenUrl: string; adTime: number };
 
 let flowRunning = false;
 let flowStarted = false;
-
-function allowedHosts(): readonly string[] {
-  return HOSTS;
-}
+let ui: FullPageOverlay | null = null;
 
 function requestVisibilitySpoof(): void {
   chrome.runtime.sendMessage({ type: 'INJECT_VISIBILITY_SPOOF' }).catch(() => {});
 }
 
-function persistStartFromLocation(): void {
-  try {
-    if (location.hostname.includes('shortxlinks.com')) {
-      const m = location.pathname.match(/\/(rcz_[^/?#]+)/i);
-      if (m) sessionStorage.setItem(SESSION_START, `https://shortxlinks.com/${m[1]}`);
-    }
-    const adlink = location.search.match(/[?&]adlinkfly=(rcz_[^&?#]+)/i);
-    if (adlink) sessionStorage.setItem(SESSION_START, `https://shortxlinks.com/${adlink[1]}`);
-  } catch {}
+function bootOverlayLock(): void {
+  const active = overlayActiveClass(OVERLAY_ID);
+  document.documentElement.classList.add(active);
+  if (document.getElementById(BOOT_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = BOOT_STYLE_ID;
+  style.textContent = buildFullPageOverlayCss(OVERLAY_ID, active);
+  (document.head || document.documentElement).appendChild(style);
 }
 
-function startUrlFromPage(): string | null {
+function mountUi(status = 'Getting things ready…'): FullPageOverlay {
+  bootOverlayLock();
+  if (ui) {
+    ui.setNote(NOTE);
+    ui.setStatus(status);
+    ui.setError(null);
+    return ui;
+  }
+  ui = createFullPageOverlay({
+    id: OVERLAY_ID,
+    brand: 'Skip Wait',
+    note: NOTE,
+    status,
+    countdownLabel: 'Your link opens in',
+  });
+  return ui;
+}
+
+function hasSession(): boolean {
+  try {
+    return !!(sessionStorage.getItem(SESSION_START) || sessionStorage.getItem(SESSION_TOKEN));
+  } catch {
+    return false;
+  }
+}
+
+function resolveStartUrl(): string | null {
   try {
     const stored = sessionStorage.getItem(SESSION_START);
     if (stored) return stored;
   } catch {}
-  if (location.hostname.includes('shortxlinks.com')) {
-    const m = location.pathname.match(/\/(rcz_[^/?#]+)/i);
-    if (m) return `https://shortxlinks.com/${m[1]}`;
-  }
-  const adlink = location.search.match(/[?&]adlinkfly=(rcz_[^&?#]+)/i);
-  if (adlink) return `https://shortxlinks.com/${adlink[1]}`;
+
+  const adAlias = shortxAliasFromAdlinkfly(location.search);
+  if (adAlias) return shortxStartUrl(adAlias);
+
   const go = document.querySelector<HTMLInputElement>('input[name="go"]')?.value?.trim();
   if (go) {
     try {
-      const match = atob(go).match(/https:\/\/shortxlinks\.com\/rcz_[^?\s"']+/i);
-      if (match) return match[0].split('?')[0] ?? match[0];
+      const fromGo = shortxStartUrlFromText(atob(go));
+      if (fromGo) return fromGo;
     } catch {}
   }
-  const html = document.documentElement?.innerHTML ?? '';
-  const match = html.match(/https:\/\/shortxlinks\.com\/rcz_[^?"'\s&]+/i);
-  return match?.[0].split('?')[0] ?? null;
+
+  if (isShortxTimerPage()) {
+    const alias = shortxAliasFromPath(location.pathname);
+    if (alias) return shortxStartUrl(alias);
+  }
+
+  return null;
+}
+
+function persistStartFromLocation(): void {
+  if (!isShortxPipelinePage() && !hasSession()) return;
+  const start = resolveStartUrl();
+  if (!start) return;
+  try {
+    sessionStorage.setItem(SESSION_START, start);
+  } catch {}
 }
 
 function readStoredResult(): StoredResult | null {
   try {
     const tokenUrl = sessionStorage.getItem(SESSION_TOKEN);
     const adTime = Number(sessionStorage.getItem(SESSION_AD_TIME));
-    if (tokenUrl && adTime > 0) {
-      if (Date.now() <= adTime + AD_WAIT_MS + 60_000) return { tokenUrl, adTime };
+    if (tokenUrl && isShortxTokenUrl(tokenUrl) && adTime > 0) {
+      if (Date.now() <= adTime + SHORTX_AD_WAIT_MS + 60_000) return { tokenUrl, adTime };
       sessionStorage.removeItem(SESSION_TOKEN);
       sessionStorage.removeItem(SESSION_AD_TIME);
     }
@@ -102,50 +151,27 @@ function normalizePageUrl(url: string): string {
 }
 
 function isShortxFinalTimerPage(): boolean {
-  if (!location.hostname.includes('shortxlinks.com')) return false;
-  if (!/\/rcz_/i.test(location.pathname)) return false;
-  if (document.title.includes('Too Early')) return false;
-  if (location.search.length > 1) return true;
-  return !!document.querySelector('#go-link, form[action*="/links/go"]');
+  return isShortxTimerPage() && !document.title.includes('Too Early');
 }
 
 function isTooEarlyShortx(): boolean {
-  return location.hostname.includes('shortxlinks.com') && document.title.includes('Too Early');
-}
-
-function hasChainMarkers(): boolean {
-  if (startUrlFromPage()) return true;
-  if (/[?&]adlinkfly=rcz_/i.test(location.search)) return true;
-  if (document.querySelector('input[name="newwpsafelink"], input[name="go"], #wpsafelinkhuman, #wpsafelink-landing'))
-    return true;
-  try {
-    if (sessionStorage.getItem(SESSION_START) || sessionStorage.getItem(SESSION_TOKEN)) return true;
-  } catch {}
-  return false;
+  return isShortxHost() && document.title.includes('Too Early');
 }
 
 function shouldRunEager(): boolean {
-  try {
-    if (sessionStorage.getItem(SESSION_START)) return true;
-  } catch {}
-  return (
-    (location.hostname.includes('shortxlinks.com') && /\/rcz_/i.test(location.pathname)) ||
-    /[?&]adlinkfly=rcz_/i.test(location.search)
-  );
+  if (hasSession()) return true;
+  if (shortxAliasFromAdlinkfly(location.search)) return true;
+  if (!isShortxHost() || !shortxAliasFromPath(location.pathname)) return false;
+  return location.search.length > 1 || document.title.includes('Too Early');
 }
 
 function shouldRun(): boolean {
   if (window !== window.top) return false;
-  const inChain = hasChainMarkers();
-  if (!isAllowedHost(allowedHosts()) && !inChain) return false;
-  if (
-    location.hostname.includes('shortxlinks.com') &&
-    document.querySelector('#go-link, form[action*="/links/go"]') &&
-    !document.title.includes('Too Early')
-  )
-    return true;
+  if (isShortxFinalTimerPage()) return true;
   if (isTooEarlyShortx() && readStoredResult()) return true;
-  return inChain;
+  if (isShortxMediatorPage()) return true;
+  if (hasSession() && isShortxPipelinePage()) return true;
+  return false;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -220,49 +246,48 @@ async function postLinksGo(): Promise<string | null> {
   }
 }
 
-async function finishOnTimerPage(): Promise<boolean> {
-  let posted = false;
+async function finishOnTimerPage(overlay: FullPageOverlay): Promise<boolean> {
+  overlay.hideCountdown();
+  overlay.setStatus('Unlocking your link…');
   for (let i = 0; i < 120; i++) {
-    const link = document.querySelector<HTMLAnchorElement>('a.get-link');
-    if (link?.href && /^https?:\/\//.test(link.href) && !link.classList.contains('disabled')) {
-      clearChainSession();
-      window.location.replace(link.href);
-      return true;
-    }
     const form = document.querySelector<HTMLFormElement>('#go-link, form[action*="/links/go"]');
-    if (form && !posted) {
-      posted = true;
+    if (form) {
       const dest = await postLinksGo();
       if (dest) {
         clearChainSession();
+        overlay.setStatus('Opening your link…');
         window.location.replace(dest);
         return true;
       }
     }
     await sleep(250);
   }
+  overlay.setError('Couldn’t unlock this link. Reload and try again.');
   flowStarted = false;
   return false;
 }
 
-async function waitForUnlock(tokenUrl: string, adTime: number): Promise<void> {
-  const endTs = adTime + AD_WAIT_MS;
-  while (Date.now() < endTs + 8_000) {
+async function waitForUnlock(overlay: FullPageOverlay, tokenUrl: string, adTime: number): Promise<void> {
+  const unlockAt = adTime + SHORTX_AD_WAIT_MS;
+  const deadline = unlockAt + 8_000;
+  overlay.setStatus('Waiting for timer…');
+  if (Date.now() < unlockAt) overlay.startCountdown(unlockAt);
+  while (Date.now() < deadline) {
     if (await isTokenUnlocked(tokenUrl)) {
+      overlay.hideCountdown();
       if (normalizePageUrl(location.href) === normalizePageUrl(tokenUrl)) {
-        await finishOnTimerPage();
+        await finishOnTimerPage(overlay);
         return;
       }
+      overlay.setStatus('Opening your link…');
       window.location.replace(tokenUrl);
       return;
     }
     await sleep(UNLOCK_POLL_MS);
   }
-  if (normalizePageUrl(location.href) === normalizePageUrl(tokenUrl)) {
-    await finishOnTimerPage();
-    return;
-  }
-  window.location.replace(tokenUrl);
+  overlay.hideCountdown();
+  overlay.setError('Timer wait timed out. Reload and try again.');
+  flowStarted = false;
 }
 
 async function runFlow(): Promise<void> {
@@ -270,6 +295,7 @@ async function runFlow(): Promise<void> {
   flowRunning = true;
   flowStarted = true;
   requestVisibilitySpoof();
+  const overlay = mountUi();
   try {
     persistStartFromLocation();
     const stored = readStoredResult();
@@ -277,21 +303,30 @@ async function runFlow(): Promise<void> {
       isShortxFinalTimerPage() ||
       (stored && normalizePageUrl(location.href) === normalizePageUrl(stored.tokenUrl))
     ) {
-      await finishOnTimerPage();
+      await finishOnTimerPage(overlay);
       return;
     }
     if (isTooEarlyShortx() && stored) {
-      await waitForUnlock(stored.tokenUrl, stored.adTime);
+      await waitForUnlock(overlay, stored.tokenUrl, stored.adTime);
       return;
     }
-    const startUrl = startUrlFromPage();
-    if (!startUrl) return;
-    const result = await fetchVerification(startUrl);
-    if ('ok' in result && result.ok === false) {
+    const startUrl = resolveStartUrl();
+    if (!startUrl) {
+      overlay.setError('Short link missing — open the original link again.');
       flowStarted = false;
       return;
     }
-    await waitForUnlock((result as StoredResult).tokenUrl, (result as StoredResult).adTime);
+    overlay.setStatus('Verifying your link…');
+    const result = await fetchVerification(startUrl);
+    if ('ok' in result && result.ok === false) {
+      overlay.setError(result.error || 'Verification failed. Reload and try again.');
+      flowStarted = false;
+      return;
+    }
+    await waitForUnlock(overlay, (result as StoredResult).tokenUrl, (result as StoredResult).adTime);
+  } catch {
+    overlay.setError('Something went wrong — reload and try again.');
+    flowStarted = false;
   } finally {
     flowRunning = false;
   }
@@ -299,8 +334,19 @@ async function runFlow(): Promise<void> {
 
 export function initShortxlinksSafelinkChain(): void {
   if (window !== window.top) return;
+  if (
+    !isShortxHost() &&
+    !isShortxMediatorHost() &&
+    !shortxAliasFromAdlinkfly(location.search) &&
+    !hasSession()
+  )
+    return;
+
   persistStartFromLocation();
-  if (shouldRunEager()) requestVisibilitySpoof();
+  if (shouldRunEager()) {
+    bootOverlayLock();
+    requestVisibilitySpoof();
+  }
   const start = (): void => {
     if (!shouldRun()) return;
     requestVisibilitySpoof();
@@ -308,9 +354,4 @@ export function initShortxlinksSafelinkChain(): void {
   };
   if (shouldRunEager()) start();
   whenDomParsed(start);
-}
-
-if (typeof window !== 'undefined' && window === window.top) {
-  persistStartFromLocation();
-  if (shouldRunEager()) requestVisibilitySpoof();
 }

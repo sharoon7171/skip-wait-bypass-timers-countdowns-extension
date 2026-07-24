@@ -5,7 +5,7 @@ import {
   SHORTX_USER_AGENT,
   shortxResultKey,
   type ShortxFetchResult,
-} from '../content-scripts/shortxlinks-chain';
+} from './chain';
 
 const inflight = new Map<string, Promise<ShortxFetchResult>>();
 const completed = new Map<string, ShortxFetchResult>();

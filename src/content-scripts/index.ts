@@ -43,7 +43,7 @@ import { initOuoBypass } from '../sites/ouo';
 import { initPrmoviesRedirect } from '../sites/prmovies';
 import { initSidMediatorBypass } from '../sites/sid-mediator';
 import { initRomsfunDownloadInstant } from '../sites/romsfun';
-import { initShortxlinksSafelinkChain } from './shortxlinks-safelink-chain';
+import { initShortxlinksSafelinkChain } from '../sites/shortxlinks';
 import { initShrinkmeThemezonMrproblogger } from './shrinkme-themezon-mrproblogger';
 import { initShrtslugRedirect } from '../sites/shrtslug';
 import { initStbemuiptvcodesWpsafelink, initWpSafelinkRedirect } from '../sites/wp-safelink';
@@ -58,6 +58,7 @@ import { initMp4uploadCountdownBypass } from '../sites/mp4upload';
 import { initPlingDirectDownload } from '../sites/pling';
 import { initRarestudyProlinkWait } from '../sites/rarestudy';
 import { initStudyratnaProlinkBypass } from '../sites/studyratna';
+import { initTipsguruRedirect } from '../sites/tipsguru';
 import { initWahmiCountdownBypass } from '../sites/wahmi';
 import { initCutyGate } from '../sites/cuty';
 import { initExeioGate } from '../sites/exeio';
@@ -124,6 +125,7 @@ const INITS = [
   initMp4uploadCountdownBypass,
   initStudyratnaProlinkBypass,
   initRarestudyProlinkWait,
+  initTipsguruRedirect,
   initPlingDirectDownload,
   initWahmiCountdownBypass,
   initWpSafelinkRedirect,

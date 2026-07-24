@@ -2,7 +2,7 @@ import { initCoomeetMainWorldInject } from './coomeet-main-world-inject';
 import { initDocumentVisibilitySpoof } from './document-visibility-spoof';
 import { initFclcAlertSuppress, initFclcLinksGo } from '../sites/fclc';
 import { initFlightsimDownloadPatch } from '../sites/flightsim';
-import { initShortxlinksFetchChain } from './shortxlinks-fetch-chain';
+import { initShortxlinksFetchChain } from '../sites/shortxlinks';
 import { initXdmoviesLandingPageNav } from '../sites/xdmovies/landing-page-med';
 import { initMultiup } from '../sites/multiup';
 import { initLootlabsMainWorldInject } from '../sites/lootlabs';

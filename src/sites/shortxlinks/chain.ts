@@ -1,3 +1,5 @@
+import { isShortxTokenUrl } from './hosts';
+
 export type ShortxFetchResult =
   | { ok: true; tokenUrl: string; adTime: number }
   | { ok: false; error: string };
@@ -47,8 +49,7 @@ async function fetchAdToken(adUrl: string): Promise<string | null> {
     headers: { Accept: 'text/html,*/*', 'User-Agent': SHORTX_USER_AGENT },
   });
   const tokenUrl = resp.url.split('#')[0] ?? '';
-  if (/^https:\/\/shortxlinks\.com\/rcz_/i.test(tokenUrl) && tokenUrl.includes('?')) return tokenUrl;
-  return null;
+  return isShortxTokenUrl(tokenUrl) ? tokenUrl : null;
 }
 
 export async function runShortxFetchChain(startUrl: string): Promise<ShortxFetchResult> {
@@ -69,11 +70,10 @@ export async function runShortxFetchChain(startUrl: string): Promise<ShortxFetch
     h = await fetchHtml(act2, { humanverification: '1', newwpsafelink: nw });
 
     let h2 = await fetchHtml(p1.linkr);
-    if (h2.includes('name="go"')) {
-      const actGo = pick(h2, /action="([^"]+)"/);
-      const go2 = pick(h2, /name="go" value="([^"]+)"/);
-      if (actGo && go2) h2 = await fetchHtml(actGo, { go: go2 });
-    }
+    const actGo = pick(h2, /action="([^"]+)"/);
+    const go2 = pick(h2, /name="go" value="([^"]+)"/);
+    if (!actGo || !go2) return { ok: false, error: 'hop2 landing missing' };
+    h2 = await fetchHtml(actGo, { go: go2 });
 
     const acth = pick(h2, /action="([^"]+)"/);
     const nwh = pick(h2, /name="newwpsafelink" value="([^"]+)"/);
