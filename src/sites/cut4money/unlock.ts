@@ -64,13 +64,25 @@ const counterSec = (): number => {
   const page = document.documentElement.innerHTML;
   const m = page.match(/["']counter_value["']\s*:\s*["']?(\d+)/);
   if (m?.[1]) return Math.max(0, parseInt(m[1], 10));
-  return 0;
+  const t = document.querySelector('#timer, #countdown, .timer, #counter');
+  const n = parseInt(t?.textContent?.trim() ?? '', 10);
+  return Number.isFinite(n) && n > 0 ? n : 0;
 };
+
+const counterReady = (): boolean =>
+  /["']counter_value["']\s*:\s*["']?\d+/.test(document.documentElement.innerHTML) ||
+  Boolean(document.querySelector('#timer, #countdown, .timer, #counter')?.textContent?.trim());
 
 const recordChain = (): void => {
   const alias = cut4moneyAliasFromPath(location.pathname);
   if (!alias) return;
   void ensureCut4moneyChain(alias, location.origin);
+};
+
+const postFromPage = (): Promise<string | null> => {
+  const form = linksGoFormFromHtml(document.documentElement.innerHTML, location.href);
+  if (!form) return Promise.resolve(null);
+  return postLinksGo(form, location.href);
 };
 
 const runUnlock = async (): Promise<void> => {
@@ -79,6 +91,8 @@ const runUnlock = async (): Promise<void> => {
   requestVisibilitySpoof();
   recordChain();
   const overlay = mountUi('Getting things ready…');
+
+  for (let i = 0; i < 50 && !counterReady(); i++) await sleep(100);
 
   const sec = counterSec();
   if (sec > 0) {
@@ -103,14 +117,20 @@ const runUnlock = async (): Promise<void> => {
   }
 
   overlay.setStatus('Unlocking your link…');
-  const form = linksGoFormFromHtml(document.documentElement.innerHTML, location.href);
-  if (!form) {
-    overlay.setStatus('This page isn’t ready yet. Reload and try again.');
-    started = false;
-    return;
+  let url = await postFromPage();
+  if (!url && sec > 0) {
+    overlay.setStatus('Waiting for the short timer…');
+    overlay.startCountdown(Date.now() + (sec + 2) * 1000);
+    const endAt = Date.now() + (sec + 2) * 1000;
+    while (!url && Date.now() < endAt) {
+      revealTimerLinks();
+      url = await postFromPage();
+      if (url) break;
+      await sleep(200);
+    }
+    overlay.hideCountdown();
   }
 
-  const url = await postLinksGo(form, location.href);
   if (!url) {
     overlay.setStatus('Couldn’t unlock this link. Reload and try again.');
     started = false;
@@ -129,6 +149,11 @@ export function initCut4moneyUnlock(): void {
   const tick = (): void => {
     if (started) return;
     if (!isUnlockShell()) return;
+    if (!counterReady() && document.readyState === 'loading') {
+      bootOverlayLock();
+      mountUi('Getting things ready…');
+      return;
+    }
     mountUi('Getting things ready…');
     void runUnlock();
   };

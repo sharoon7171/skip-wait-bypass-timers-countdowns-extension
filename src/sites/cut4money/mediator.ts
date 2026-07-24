@@ -15,7 +15,7 @@ import { CUT4MONEY_HOSTS, CUT4MONEY_MEDIATOR_HOSTS } from './hosts';
 const OVERLAY_ID = 'skip-wait-cut4money-mediator';
 const BOOT_STYLE_ID = 'skip-wait-cut4money-mediator-boot';
 const GO_SEL = '#go_d';
-const SKIP_ACTION_RE = /^page_skip5(?:_(\d+))?$/i;
+const SKIP_ACTION_RE = /^page_skip\d+(?:_(\d+))?$/i;
 
 let ui: FullPageOverlay | null = null;
 let started = false;
