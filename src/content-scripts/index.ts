@@ -16,6 +16,7 @@ import { initGplinksGate, initGplinksLinksGo, initGplinksMediator } from '../sit
 import { initNitrolinkMediator, initNitrolinkUnlock } from '../sites/nitrolink';
 import { initCut4moneyMediator, initCut4moneyUnlock } from '../sites/cut4money';
 import { initTflyGate } from '../sites/tfly';
+import { initMitlyGate } from '../sites/mitly';
 import { initSflGate } from '../sites/sfl';
 import { initBitcotasksReadArticle } from './bitcotasks-read-article';
 import { initClipiRedirect } from '../sites/clipi';
@@ -88,6 +89,7 @@ const INITS = [
   initCut4moneyMediator,
   initCut4moneyUnlock,
   initTflyGate,
+  initMitlyGate,
   initSflGate,
   initAdlinkClickVerifyPoll,
   initAdlinkflyLinksGo,
