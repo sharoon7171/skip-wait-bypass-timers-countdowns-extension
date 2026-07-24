@@ -10,6 +10,7 @@ import { initXdmoviesMainWorldInject } from '../sites/xdmovies/mediator-page';
 import { initStudyratnaCookieDest } from '../sites/studyratna';
 import { initExeioAdblockInject } from '../sites/exeio';
 import { initCutyAdblockInject } from '../sites/cuty';
+import { initRinkuPageHooksInject } from '../sites/rinku';
 import { initStorylineScormMainWorldInject } from '../sites/storyline-scorm';
 
 initCoomeetMainWorldInject();
@@ -25,4 +26,5 @@ initXdmoviesMainWorldInject();
 initStudyratnaCookieDest();
 initExeioAdblockInject();
 initCutyAdblockInject();
+initRinkuPageHooksInject();
 initStorylineScormMainWorldInject();

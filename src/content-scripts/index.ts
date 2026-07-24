@@ -69,6 +69,7 @@ import { initWahmiCountdownBypass } from '../sites/wahmi';
 import { initCutyGate } from '../sites/cuty';
 import { initCutwinGate } from '../sites/cutwin';
 import { initExeioGate } from '../sites/exeio';
+import { initRinkuGate } from '../sites/rinku';
 import { initStorylineCoursePlayBrand } from '../sites/storyline-scorm';
 
 const INITS = [
@@ -78,6 +79,7 @@ const INITS = [
   initCutyGate,
   initCutwinGate,
   initExeioGate,
+  initRinkuGate,
   initLootlabsUnlock,
   initLlSafelinkHqChain,
   initLinkjust,
